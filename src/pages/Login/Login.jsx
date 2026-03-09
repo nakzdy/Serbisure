@@ -6,7 +6,8 @@ import { appName, systemInfo } from "../../data/system";
 function Login({ onLogin }) {
     const [formData, setFormData] = useState({
         email: "",
-        password: ""
+        password: "",
+        role: "Homeowner",
     });
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
@@ -23,7 +24,7 @@ function Login({ onLogin }) {
         setLoading(true);
         setError("");
 
-        const result = await onLogin(formData.email, formData.password);
+        const result = await onLogin(formData.email, formData.password, formData.role);
 
         if (!result.success) {
             // Map Firebase Auth error codes to user-friendly messages
@@ -71,6 +72,24 @@ function Login({ onLogin }) {
                             value={formData.email}
                             onChange={handleChange}
                         />
+                    </div>
+
+                    <div className="form-row">
+                        <label>Login As</label>
+                        <select
+                            name="role"
+                            value={formData.role}
+                            onChange={handleChange}
+                            style={{
+                                width: "100%", padding: "12px 16px", borderRadius: "12px",
+                                border: "1px solid var(--input-border)", background: "var(--input-bg)",
+                                color: "var(--text)", fontFamily: "inherit", fontSize: "15px",
+                                marginBottom: "16px"
+                            }}
+                        >
+                            <option value="Homeowner">Homeowner</option>
+                            <option value="Service Worker">Service Worker</option>
+                        </select>
                     </div>
 
                     <div className="form-row">

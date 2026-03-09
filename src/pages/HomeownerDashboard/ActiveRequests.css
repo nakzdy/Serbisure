@@ -133,7 +133,7 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: #2a2a44;
+    background: var(--bg-2);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -163,11 +163,11 @@
     align-items: center;
     gap: 4px;
     font-size: 11px;
-    color: #c0c0d8;
+    color: var(--text-muted);
 }
 
 .request-worker-rating .review-count {
-    color: #6b6b8a;
+    color: var(--muted);
     font-weight: 400;
 }
 
@@ -177,7 +177,7 @@
     align-items: center;
     gap: 8px;
     padding-top: 14px;
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid var(--card-border);
 }
 
 .searching-dot {
@@ -204,14 +204,14 @@
 
 .searching-text {
     font-size: 13px;
-    color: #8b8ba3;
+    color: var(--text-muted);
     font-style: italic;
 }
 
 .cancel-link {
     margin-left: auto;
     font-size: 13px;
-    color: #8b8ba3;
+    color: var(--text-muted);
     font-weight: 500;
     cursor: pointer;
     background: none;
@@ -221,7 +221,7 @@
 }
 
 .cancel-link:hover {
-    color: #c0c0d8;
+    color: var(--text);
 }
 
 /* Card action buttons */
@@ -234,9 +234,9 @@
 .btn-details {
     padding: 7px 16px;
     border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--card-border);
     background: transparent;
-    color: #fff;
+    color: var(--text);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
@@ -245,8 +245,8 @@
 }
 
 .btn-details:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--input-bg);
+    border-color: var(--input-focus-border);
 }
 
 .btn-message {

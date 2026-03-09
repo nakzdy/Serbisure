@@ -6,7 +6,8 @@ function RegistrationForm({ title, subtitle, roles, skills, onRegister }) {
         name: "",
         email: "",
         password: "",
-        role: roles[0]
+        role: roles[0],
+        skill: skills[0]
     });
     const [showPassword, setShowPassword] = useState(false);
     const [submitted, setSubmitted] = useState(false);
@@ -24,7 +25,7 @@ function RegistrationForm({ title, subtitle, roles, skills, onRegister }) {
         setLoading(true);
         setError("");
 
-        const result = await onRegister(formData.email, formData.role, formData.name, formData.password);
+        const result = await onRegister(formData.email, formData.role, formData.name, formData.password, formData.skill);
 
         if (result.success) {
             setSubmitted(true);
@@ -43,7 +44,7 @@ function RegistrationForm({ title, subtitle, roles, skills, onRegister }) {
         return (
             <section>
                 <div className="success-card">
-                    <span className="success-icon">✓</span>
+                    <span className="success-icon"><i className="fa-solid fa-check"></i></span>
                     <h2 className="form-title">Registration Successful!</h2>
                     <p className="form-subtitle">
                         Welcome, {formData.name}! Your account has been created.
@@ -138,7 +139,7 @@ function RegistrationForm({ title, subtitle, roles, skills, onRegister }) {
                     <>
                         <div className="form-row">
                             <label>Skill Category:</label>
-                            <select name="skill" onChange={handleChange}>
+                            <select name="skill" value={formData.skill} onChange={handleChange}>
                                 {skills.map((skill, index) => (
                                     <option key={index} value={skill}>{skill}</option>
                                 ))}

@@ -17,7 +17,7 @@ function TopBanner({ notifications }) {
         }}>
             <h2 style={{ fontSize: "18px", margin: 0 }}>SerbiSure</h2>
             <div className="notification-icon" style={{ position: "relative", cursor: "pointer" }} onClick={() => setShowList(!showList)}>
-                <span style={{ fontSize: "20px" }}>🔔</span>
+                <span style={{ fontSize: "20px" }}><i className="fa-regular fa-bell"></i></span>
                 {notifications.length > 0 && (
                     <span style={{
                         position: "absolute",

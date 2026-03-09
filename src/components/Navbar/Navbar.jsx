@@ -47,7 +47,7 @@ function Navbar({ user, notifications, onLogout }) {
                         className="btn-icon"
                         title="Notifications"
                     >
-                        <span>🔔</span>
+                        <span><i className="fa-regular fa-bell"></i></span>
                         {notifications.length > 0 && (
                             <span className="notification-badge">
                                 {notifications.length > 9 ? "9+" : notifications.length}

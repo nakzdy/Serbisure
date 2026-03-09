@@ -11,7 +11,15 @@ function HistoryPage({ user }) {
             category: "Plumbing",
             workerName: "Marcus J.",
             date: "Feb 20, 2026",
-            cost: "₱4,250",
+            status: "completed",
+            rating: 5,
+        },
+        {
+            id: 10,
+            title: "Wooden Deck Repair",
+            category: "Carpentry",
+            workerName: "You",
+            date: "Mar 01, 2026",
             status: "completed",
             rating: 5,
         },
@@ -21,7 +29,7 @@ function HistoryPage({ user }) {
             category: "Electrical",
             workerName: "Mario Rossi",
             date: "Feb 15, 2026",
-            cost: "₱6,800",
+
             status: "completed",
             rating: 4,
         },
@@ -31,7 +39,7 @@ function HistoryPage({ user }) {
             category: "Cleaning",
             workerName: "Maria Clara",
             date: "Feb 10, 2026",
-            cost: "₱2,500",
+
             status: "completed",
             rating: 5,
         },
@@ -41,7 +49,7 @@ function HistoryPage({ user }) {
             category: "Electrical",
             workerName: "Juana Dela Cruz",
             date: "Feb 5, 2026",
-            cost: "₱3,200",
+
             status: "cancelled",
             rating: null,
         },
@@ -51,15 +59,33 @@ function HistoryPage({ user }) {
             category: "Plumbing",
             workerName: "Marcus J.",
             date: "Jan 28, 2026",
-            cost: "₱1,800",
+
             status: "completed",
             rating: 4,
         },
     ]);
 
-    const filteredHistory = filterStatus === "all"
-        ? serviceHistory
-        : serviceHistory.filter(h => h.status === filterStatus);
+    const filteredHistory = serviceHistory
+        .filter(h => {
+            const matchesStatus = filterStatus === "all" || h.status === filterStatus;
+
+            // Skill filtering for workers
+            if (user?.role === "worker") {
+                const skillsString = user?.skills || "";
+                const profileSkills = user?.workerProfile?.skills || [];
+                const allSkills = [...new Set([...profileSkills, ...skillsString.split(",").map(s => s.trim()).filter(Boolean)])];
+
+                // If they have explicitly onboarded, only show their skills
+                if (user.isWorkerOnboarded && allSkills.length > 0) {
+                    return matchesStatus && allSkills.some(s => s.toLowerCase() === h.category.toLowerCase());
+                }
+
+                // If they haven't onboarded yet, show everything (new worker view)
+                return matchesStatus;
+            }
+
+            return matchesStatus;
+        });
 
     const getStatusStyle = (status) => {
         switch (status) {
@@ -72,10 +98,8 @@ function HistoryPage({ user }) {
         }
     };
 
-    const completedCount = serviceHistory.filter(h => h.status === "completed").length;
-    const totalSpent = serviceHistory
-        .filter(h => h.status === "completed")
-        .reduce((sum, h) => sum + parseInt(h.cost.replace(/[₱,]/g, "")), 0);
+    const completedCount = filteredHistory.filter(h => h.status === "completed").length;
+
 
     return (
         <div className="page-wrapper" style={{ width: "100%", maxWidth: "1100px" }}>
@@ -90,7 +114,7 @@ function HistoryPage({ user }) {
             </div>
 
             {/* Stats Cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "16px", marginBottom: "24px", width: "100%" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "24px", width: "100%" }}>
                 <div style={{
                     background: "var(--card-bg)",
                     border: "1px solid var(--card-border)",
@@ -99,7 +123,7 @@ function HistoryPage({ user }) {
                     textAlign: "center"
                 }}>
                     <div style={{ fontSize: "28px", fontWeight: "700", color: "var(--accent)" }}>
-                        {serviceHistory.length}
+                        {filteredHistory.length}
                     </div>
                     <div style={{ fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px", fontWeight: "600", marginTop: "4px" }}>
                         Total Bookings
@@ -119,20 +143,7 @@ function HistoryPage({ user }) {
                         Completed
                     </div>
                 </div>
-                <div style={{
-                    background: "var(--card-bg)",
-                    border: "1px solid var(--card-border)",
-                    borderRadius: "14px",
-                    padding: "20px",
-                    textAlign: "center"
-                }}>
-                    <div style={{ fontSize: "28px", fontWeight: "700", color: "var(--text)" }}>
-                        ₱{totalSpent.toLocaleString()}
-                    </div>
-                    <div style={{ fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "1px", fontWeight: "600", marginTop: "4px" }}>
-                        Total Spent
-                    </div>
-                </div>
+
             </div>
 
             {/* Filter tabs */}
@@ -185,9 +196,12 @@ function HistoryPage({ user }) {
                             fontSize: "18px",
                             flexShrink: 0
                         }}>
-                            {item.category === "Plumbing" ? "🔧" :
-                                item.category === "Electrical" ? "⚡" :
-                                    item.category === "Cleaning" ? "🧹" : "🔨"}
+                            {item.category === "Plumbing" ? <i className="fa-solid fa-wrench"></i> :
+                                item.category === "Electrical" ? <i className="fa-solid fa-bolt"></i> :
+                                    item.category === "Cleaning" ? <i className="fa-solid fa-broom"></i> :
+                                        item.category === "Babysitting" ? <i className="fa-solid fa-baby-carriage"></i> :
+                                            item.category === "Pet Care" ? <i className="fa-solid fa-paw"></i> :
+                                                item.category === "Carpentry" ? <i className="fa-solid fa-hammer"></i> : <i className="fa-solid fa-screwdriver-wrench"></i>}
                         </div>
 
                         {/* Info */}
@@ -209,7 +223,7 @@ function HistoryPage({ user }) {
                             {item.rating ? (
                                 <div style={{ display: "flex", gap: "2px" }}>
                                     {[...Array(5)].map((_, i) => (
-                                        <span key={i} style={{ color: i < item.rating ? "var(--status-pending-text)" : "var(--input-border)", fontSize: "13px" }}>★</span>
+                                        <span key={i} style={{ color: i < item.rating ? "var(--status-pending-text)" : "var(--input-border)", fontSize: "11px", marginRight: "2px" }}><i className="fa-solid fa-star"></i></span>
                                     ))}
                                 </div>
                             ) : (
@@ -217,12 +231,7 @@ function HistoryPage({ user }) {
                             )}
                         </div>
 
-                        {/* Cost */}
-                        <div style={{ textAlign: "right", flexShrink: 0, minWidth: "70px" }}>
-                            <div style={{ fontSize: "15px", fontWeight: "700", color: "var(--text)" }}>
-                                {item.cost}
-                            </div>
-                        </div>
+
 
                         {/* Status */}
                         <span style={{

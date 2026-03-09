@@ -12,7 +12,7 @@ function ServicesPage({ workers, addNotification }) {
     });
     const [showSuccess, setShowSuccess] = useState(false);
 
-    const categories = ["All", "Plumbing", "Electrical", "Cleaning", "Carpentry", "General"];
+    const categories = ["All", "Plumbing", "Electrical", "Cleaning", "Carpentry", "Babysitting", "Pet Care", "General Help"];
 
     const filteredWorkers = workers.filter(worker => {
         const matchesSearch = worker.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -64,7 +64,7 @@ function ServicesPage({ workers, addNotification }) {
                     alignItems: "center",
                     width: "100%"
                 }}>
-                    <span>✓ Booking request sent successfully!</span>
+                    <span><i className="fa-solid fa-check"></i> Booking request sent successfully!</span>
                     <button style={{ background: "none", border: "none", color: "#2ed573", cursor: "pointer", fontSize: "18px" }}
                         onClick={() => setShowSuccess(false)}>×</button>
                 </div>
@@ -128,32 +128,34 @@ function ServicesPage({ workers, addNotification }) {
                                 width: "52px",
                                 height: "52px",
                                 borderRadius: "50%",
-                                background: "var(--bg-1)",
+                                background: "var(--input-bg)",
+                                border: "2px solid var(--card-border)",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                fontSize: "24px"
+                                overflow: "hidden",
+                                flexShrink: 0
                             }}>
-                                👤
+                                <i className="fa-solid fa-user" style={{ fontSize: "28px", color: "var(--text-muted)", opacity: 0.8 }}></i>
                             </div>
                             <div style={{ flex: 1 }}>
-                                <h3 style={{ margin: "0 0 3px 0", fontSize: "16px", color: "var(--text)" }}>{worker.name}</h3>
+                                <h3 style={{ margin: "0 0 3px 0", fontSize: "16px", color: "var(--text)", fontWeight: "600" }}>{worker.name}</h3>
                                 <span style={{
                                     fontSize: "11px",
                                     fontWeight: "600",
-                                    color: worker.status === "verified" ? "#2ed573" : "#ffa502",
+                                    color: worker.status === "verified" ? "var(--accent)" : "var(--text-muted)",
                                     display: "flex",
                                     alignItems: "center",
                                     gap: "4px"
                                 }}>
-                                    {worker.status === "verified" ? "✓ Verified" : "⏳ Pending"}
+                                    {worker.status === "verified" ? <span><i className="fa-solid fa-circle-check"></i> Verified</span> : <span><i className="fa-regular fa-clock"></i> Pending</span>}
                                 </span>
                             </div>
                             <div style={{ textAlign: "right" }}>
-                                <div style={{ fontSize: "18px", fontWeight: "700", color: "#f39c12" }}>
+                                <div style={{ fontSize: "18px", fontWeight: "700", color: "var(--accent)" }}>
                                     {worker.reliabilityScore}%
                                 </div>
-                                <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>Reliability</div>
+                                <div style={{ fontSize: "10px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>Reliability</div>
                             </div>
                         </div>
 
@@ -181,9 +183,10 @@ function ServicesPage({ workers, addNotification }) {
                             gap: "6px",
                             marginBottom: "16px",
                             fontSize: "12px",
-                            color: worker.tesdaCertificate ? "#2ed573" : "var(--text-muted)"
+                            color: worker.tesdaCertificate ? "var(--accent)" : "var(--text-muted)",
+                            fontWeight: "500"
                         }}>
-                            {worker.tesdaCertificate ? "🏅 TESDA Certified" : "No TESDA Certificate"}
+                            {worker.tesdaCertificate ? <span><i className="fa-solid fa-award"></i> TESDA Certified</span> : <span><i className="fa-solid fa-minus" style={{ fontSize: "10px" }}></i> No TESDA Certificate</span>}
                         </div>
 
                         <button
@@ -231,13 +234,13 @@ function ServicesPage({ workers, addNotification }) {
                     backdropFilter: "blur(4px)"
                 }}>
                     <div style={{
-                        background: "#1a1a2e",
-                        border: "1px solid rgba(255,255,255,0.08)",
+                        background: "var(--card-bg-solid)",
+                        border: "1px solid var(--card-border)",
                         borderRadius: "20px",
                         padding: "32px",
                         width: "100%",
                         maxWidth: "460px",
-                        boxShadow: "0 20px 60px rgba(0,0,0,0.5)"
+                        boxShadow: "0 20px 60px rgba(0,0,0,0.3)"
                     }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
                             <h3 style={{ margin: 0, fontSize: "20px", color: "var(--text)" }}>
@@ -246,7 +249,7 @@ function ServicesPage({ workers, addNotification }) {
                             <button onClick={() => setBookingWorker(null)} style={{
                                 background: "none",
                                 border: "none",
-                                color: "#8b8ba3",
+                                color: "var(--text-muted)",
                                 fontSize: "22px",
                                 cursor: "pointer"
                             }}>×</button>
@@ -289,9 +292,9 @@ function ServicesPage({ workers, addNotification }) {
                                     rows="3"
                                     style={{
                                         width: "100%",
-                                        background: "rgba(255,255,255,0.05)",
-                                        border: "1px solid rgba(255,255,255,0.08)",
-                                        color: "#fff",
+                                        background: "var(--input-bg)",
+                                        border: "1px solid var(--input-border)",
+                                        color: "var(--text)",
                                         borderRadius: "10px",
                                         padding: "12px",
                                         fontFamily: "inherit",

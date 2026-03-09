@@ -1,15 +1,50 @@
 import { useState } from "react";
-import { activeRequests, topRatedWorkers, dashboardNotifications } from "../../data/dashboard";
+import { useNavigate } from "react-router-dom";
+import { activeRequests as initialRequests, topRatedWorkers, dashboardNotifications } from "../../data/dashboard";
 import "./Dashboard.css";
 import "./ActiveRequests.css";
 import "./Sidebar.css";
 
 function HomeownerDashboardPage({ user }) {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState("pending");
+    const [requests, setRequests] = useState(initialRequests);
+    const [selectedRequest, setSelectedRequest] = useState(null);
+    const [messageRequest, setMessageRequest] = useState(null);
+    const [messageText, setMessageText] = useState("");
+    const [messageSent, setMessageSent] = useState(false);
+    const [filterOpen, setFilterOpen] = useState(false);
+    const [minRating, setMinRating] = useState(0);
 
     const filteredRequests = activeTab === "pending"
-        ? activeRequests.filter(r => r.status !== "confirmed")
-        : activeRequests.filter(r => r.status === "confirmed");
+        ? requests.filter(r => r.status !== "confirmed")
+        : requests.filter(r => r.status === "confirmed");
+
+    // Cancel a searching request
+    const handleCancelRequest = (id) => {
+        setRequests(prev => prev.filter(r => r.id !== id));
+    };
+
+    // Send a message to a worker
+    const handleSendMessage = (e) => {
+        e.preventDefault();
+        setMessageSent(true);
+        setMessageText("");
+        setTimeout(() => {
+            setMessageSent(false);
+            setMessageRequest(null);
+        }, 2000);
+    };
+
+    // Filter workers by rating
+    const filteredTopWorkers = topRatedWorkers.filter(w => w.rating >= minRating);
+
+    const filterOptions = [
+        { label: "All Workers", value: 0 },
+        { label: "4.0+ Stars", value: 4.0 },
+        { label: "4.5+ Stars", value: 4.5 },
+        { label: "5.0 Stars", value: 5.0 },
+    ];
 
     return (
         <div className="dashboard-page">
@@ -46,13 +81,54 @@ function HomeownerDashboardPage({ user }) {
                         </button>
                     </div>
 
-                    <div className="dashboard-filter">
+                    <div className="dashboard-filter" style={{ position: "relative" }}>
                         <span className="filter-label">Reliability Score</span>
-                        <button className="filter-dropdown">
-                            4.5+ Stars
-                            <span className="filter-star">★</span>
-                            <span className="filter-chevron">▾</span>
+                        <button
+                            className="filter-dropdown"
+                            onClick={() => setFilterOpen(!filterOpen)}
+                        >
+                            {minRating === 0 ? "All Workers" : `${minRating}+ Stars`}
+                            <span className="filter-star"><i className="fa-solid fa-star"></i></span>
+                            <span className="filter-chevron"><i className="fa-solid fa-chevron-down"></i></span>
                         </button>
+                        {filterOpen && (
+                            <div style={{
+                                position: "absolute",
+                                top: "100%",
+                                right: 0,
+                                marginTop: "6px",
+                                background: "var(--card-bg-solid)",
+                                border: "1px solid var(--card-border)",
+                                borderRadius: "12px",
+                                overflow: "hidden",
+                                zIndex: 100,
+                                minWidth: "160px",
+                                boxShadow: "0 10px 30px rgba(0,0,0,0.4)"
+                            }}>
+                                {filterOptions.map(opt => (
+                                    <button
+                                        key={opt.value}
+                                        onClick={() => { setMinRating(opt.value); setFilterOpen(false); }}
+                                        style={{
+                                            display: "block",
+                                            width: "100%",
+                                            padding: "10px 16px",
+                                            background: minRating === opt.value ? "rgba(108, 92, 231, 0.2)" : "transparent",
+                                            border: "none",
+                                            color: minRating === opt.value ? "#6c5ce7" : "var(--text)",
+                                            fontSize: "13px",
+                                            fontWeight: minRating === opt.value ? "600" : "400",
+                                            cursor: "pointer",
+                                            textAlign: "left",
+                                            fontFamily: "inherit",
+                                            transition: "background 0.15s ease"
+                                        }}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -77,11 +153,11 @@ function HomeownerDashboardPage({ user }) {
                                     </div>
                                     <div className="request-card-meta">
                                         <span className="request-meta-item">
-                                            <span className="request-meta-icon">📅</span>
+                                            <span className="request-meta-icon"><i className="fa-regular fa-calendar" /></span>
                                             {request.date}
                                         </span>
                                         <span className="request-meta-item">
-                                            <span className="request-meta-icon">$</span>
+                                            <span className="request-meta-icon"><i className="fa-solid fa-peso-sign" /></span>
                                             Est. {request.estimatedCost}
                                         </span>
                                     </div>
@@ -96,14 +172,14 @@ function HomeownerDashboardPage({ user }) {
                                 <div className="request-card-bottom">
                                     <div className="request-worker">
                                         <div className="request-worker-avatar">
-                                            {request.worker.avatar}
+                                            <i className={request.worker.avatar || "fa-solid fa-user"} />
                                         </div>
                                         <div className="request-worker-info">
                                             <span className="request-worker-name">
                                                 {request.worker.name}
                                             </span>
                                             <span className="request-worker-rating">
-                                                ★ {request.worker.rating}
+                                                <i className="fa-solid fa-star" style={{ color: "#f39c12", fontSize: "10px" }} /> {request.worker.rating}
                                                 <span className="review-count">
                                                     ({request.worker.reviews} reviews)
                                                 </span>
@@ -111,8 +187,8 @@ function HomeownerDashboardPage({ user }) {
                                         </div>
                                     </div>
                                     <div className="request-card-actions">
-                                        <button className="btn-details">Details</button>
-                                        <button className="btn-message">Message</button>
+                                        <button className="btn-details" onClick={() => setSelectedRequest(request)}>Details</button>
+                                        <button className="btn-message" onClick={() => setMessageRequest(request)}>Message</button>
                                     </div>
                                 </div>
                             )}
@@ -121,11 +197,17 @@ function HomeownerDashboardPage({ user }) {
                                 <div className="request-searching">
                                     <span className="searching-dot"></span>
                                     <span className="searching-text">{request.searchingText}</span>
-                                    <button className="cancel-link">Cancel</button>
+                                    <button className="cancel-link" onClick={() => handleCancelRequest(request.id)}>Cancel</button>
                                 </div>
                             )}
                         </div>
                     ))}
+
+                    {filteredRequests.length === 0 && (
+                        <div style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>
+                            <p style={{ fontSize: "15px" }}>No requests found for this filter.</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -135,17 +217,17 @@ function HomeownerDashboardPage({ user }) {
                 <div className="sidebar-cta">
                     <h3>Need a new service?</h3>
                     <p>Find reliable workers for your next project instantly.</p>
-                    <button className="btn-book-now">Book Now</button>
+                    <button className="btn-book-now" onClick={() => navigate("/feedback")}>Book Now</button>
                 </div>
 
                 {/* Top Rated Nearby */}
                 <div className="sidebar-panel">
                     <div className="sidebar-panel-header">
                         <h3>Top Rated Nearby</h3>
-                        <button className="view-all">View All</button>
+                        <button className="view-all" onClick={() => navigate("/feedback")}>View All</button>
                     </div>
                     <div className="top-rated-list">
-                        {topRatedWorkers.map(worker => (
+                        {filteredTopWorkers.map(worker => (
                             <div className="top-rated-item" key={worker.id}>
                                 <div className="top-rated-avatar">
                                     <span style={{
@@ -154,14 +236,14 @@ function HomeownerDashboardPage({ user }) {
                                         display: "flex",
                                         alignItems: "center",
                                         justifyContent: "center",
-                                        fontSize: "20px",
-                                        background: "#2a2a44",
+                                        fontSize: "16px",
+                                        background: "var(--bg-2)",
                                         borderRadius: "50%",
                                     }}>
-                                        {worker.avatar}
+                                        <i className={worker.avatar || "fa-solid fa-user"} />
                                     </span>
                                     {worker.verified && (
-                                        <span className="verified-badge">✓</span>
+                                        <span className="verified-badge"><i className="fa-solid fa-check" style={{ fontSize: "8px" }} /></span>
                                     )}
                                 </div>
                                 <div className="top-rated-info">
@@ -171,7 +253,7 @@ function HomeownerDashboardPage({ user }) {
                                 <div className="top-rated-score">
                                     <div className="top-rated-rating">
                                         {worker.rating}
-                                        <span className="star">★</span>
+                                        <span className="star"><i className="fa-solid fa-star" /></span>
                                     </div>
                                     <div className={`top-rated-reliability ${worker.belowThreshold ? "top-rated-below-threshold" : ""}`}>
                                         {worker.reliability}
@@ -179,6 +261,11 @@ function HomeownerDashboardPage({ user }) {
                                 </div>
                             </div>
                         ))}
+                        {filteredTopWorkers.length === 0 && (
+                            <div style={{ textAlign: "center", padding: "20px", color: "var(--text-muted)", fontSize: "13px" }}>
+                                No workers match this rating filter.
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -201,6 +288,136 @@ function HomeownerDashboardPage({ user }) {
                     </div>
                 </div>
             </div>
+
+            {/* Details Modal */}
+            {selectedRequest && (
+                <div style={{
+                    position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+                    background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center",
+                    justifyContent: "center", zIndex: 2000, backdropFilter: "blur(4px)"
+                }} onClick={() => setSelectedRequest(null)}>
+                    <div style={{
+                        background: "var(--card-bg-solid)", border: "1px solid var(--card-border)",
+                        borderRadius: "20px", padding: "32px", width: "100%", maxWidth: "460px",
+                        boxShadow: "0 20px 60px rgba(0,0,0,0.3)"
+                    }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                            <h3 style={{ margin: 0, fontSize: "20px", color: "var(--text)" }}>Request Details</h3>
+                            <button onClick={() => setSelectedRequest(null)} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "22px", cursor: "pointer" }}>×</button>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>Service</span>
+                                <span style={{ color: "var(--text)", fontWeight: "600", fontSize: "14px" }}>{selectedRequest.title}</span>
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>Category</span>
+                                <span style={{ color: "var(--text)", fontWeight: "600", fontSize: "14px" }}>{selectedRequest.category}</span>
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>Priority</span>
+                                <span style={{ color: selectedRequest.priority === "Emergency" ? "#fc5c65" : "var(--text)", fontWeight: "600", fontSize: "14px" }}>{selectedRequest.priority}</span>
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>Schedule</span>
+                                <span style={{ color: "var(--text)", fontWeight: "600", fontSize: "14px" }}>{selectedRequest.date}</span>
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>Estimated Cost</span>
+                                <span style={{ color: "var(--accent)", fontWeight: "700", fontSize: "14px" }}>{selectedRequest.estimatedCost}</span>
+                            </div>
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                <span style={{ color: "var(--text-muted)", fontSize: "13px" }}>Status</span>
+                                <span style={{ color: "#f39c12", fontWeight: "600", fontSize: "14px" }}>{selectedRequest.statusLabel}</span>
+                            </div>
+                            {selectedRequest.worker && (
+                                <div style={{ marginTop: "8px", padding: "14px", background: "var(--input-bg)", borderRadius: "12px", border: "1px solid var(--card-border)" }}>
+                                    <div style={{ fontSize: "12px", color: "var(--text-muted)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Assigned Worker</div>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                        <span style={{ fontSize: "24px", display: "flex", alignItems: "center", justifyContent: "center", width: "40px", height: "40px", background: "var(--bg-2)", borderRadius: "50%" }}>
+                                            <i className={selectedRequest.worker.avatar || "fa-solid fa-user"} style={{ fontSize: "18px" }} />
+                                        </span>
+                                        <div>
+                                            <div style={{ fontWeight: "600", color: "var(--text)", fontSize: "14px" }}>{selectedRequest.worker.name}</div>
+                                            <div style={{ fontSize: "12px", color: "#f39c12" }}>
+                                                <i className="fa-solid fa-star" /> {selectedRequest.worker.rating} ({selectedRequest.worker.reviews} reviews)
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <button onClick={() => setSelectedRequest(null)} className="btn-primary" style={{ marginTop: "24px" }}>Close</button>
+                    </div>
+                </div>
+            )}
+
+            {/* Message Modal */}
+            {messageRequest && (
+                <div style={{
+                    position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+                    background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center",
+                    justifyContent: "center", zIndex: 2000, backdropFilter: "blur(4px)"
+                }} onClick={() => { setMessageRequest(null); setMessageSent(false); }}>
+                    <div style={{
+                        background: "var(--card-bg-solid)", border: "1px solid var(--card-border)",
+                        borderRadius: "20px", padding: "32px", width: "100%", maxWidth: "460px",
+                        boxShadow: "0 20px 60px rgba(0,0,0,0.3)"
+                    }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                            <h3 style={{ margin: 0, fontSize: "20px", color: "var(--text)" }}>
+                                Message {messageRequest.worker?.name}
+                            </h3>
+                            <button onClick={() => { setMessageRequest(null); setMessageSent(false); }} style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "22px", cursor: "pointer" }}>×</button>
+                        </div>
+
+                        {messageSent ? (
+                            <div style={{
+                                textAlign: "center", padding: "30px",
+                                background: "rgba(46, 213, 115, 0.1)", borderRadius: "12px",
+                                border: "1px solid rgba(46, 213, 115, 0.2)"
+                            }}>
+                                <div style={{ fontSize: "36px", marginBottom: "10px", color: "#2ed573" }}><i className="fa-solid fa-circle-check" /></div>
+                                <div style={{ color: "#2ed573", fontWeight: "600", fontSize: "16px" }}>Message Sent!</div>
+                                <div style={{ color: "var(--text-muted)", fontSize: "13px", marginTop: "6px" }}>
+                                    {messageRequest.worker?.name} will be notified.
+                                </div>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleSendMessage} style={{ display: "flex", flexDirection: "column", gap: "16px", padding: 0, background: "none", border: "none", boxShadow: "none", backdropFilter: "none" }}>
+                                <div style={{ fontSize: "13px", color: "var(--text-muted)", padding: "10px 14px", background: "var(--input-bg)", borderRadius: "10px" }}>
+                                    Re: <strong style={{ color: "var(--text)" }}>{messageRequest.title}</strong> — {messageRequest.category}
+                                </div>
+                                <div className="form-row">
+                                    <label>Your Message</label>
+                                    <textarea
+                                        placeholder="Type your message here..."
+                                        value={messageText}
+                                        onChange={(e) => setMessageText(e.target.value)}
+                                        required
+                                        rows="4"
+                                        style={{
+                                            width: "100%", background: "var(--input-bg)",
+                                            border: "1px solid var(--input-border)", color: "var(--text)",
+                                            borderRadius: "10px", padding: "12px", fontFamily: "inherit",
+                                            fontSize: "14px", resize: "vertical"
+                                        }}
+                                    />
+                                </div>
+                                <div style={{ display: "flex", gap: "10px" }}>
+                                    <button type="submit" className="btn-primary" style={{ flex: 2 }}>Send Message</button>
+                                    <button type="button" onClick={() => setMessageRequest(null)} style={{
+                                        flex: 1, padding: "12px", borderRadius: "12px",
+                                        border: "1px solid var(--card-border)", background: "transparent",
+                                        color: "var(--text)", fontSize: "14px", fontWeight: "500",
+                                        cursor: "pointer", fontFamily: "inherit"
+                                    }}>Cancel</button>
+                                </div>
+                            </form>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

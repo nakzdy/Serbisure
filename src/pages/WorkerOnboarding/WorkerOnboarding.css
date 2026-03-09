@@ -1,0 +1,260 @@
+/* WorkerOnboarding.css */
+
+.onboarding-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 100px);
+    padding: 20px;
+}
+
+.onboarding-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 600px;
+    padding: 40px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.onboarding-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.onboarding-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 10px 0;
+}
+
+.onboarding-header p {
+    font-size: 15px;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* Progress bar */
+.progress-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.progress-line {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    width: 100%;
+    height: 4px;
+    background: var(--input-border);
+    z-index: 1;
+}
+
+.progress-line-fill {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    height: 4px;
+    background: #6c5ce7;
+    z-index: 2;
+    transition: width 0.3s ease;
+}
+
+.progress-step {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    border: 2px solid var(--input-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-muted);
+    z-index: 3;
+    transition: all 0.3s ease;
+}
+
+.progress-step.active {
+    border-color: #6c5ce7;
+    background: #6c5ce7;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(108, 92, 231, 0.4);
+}
+
+.progress-step.completed {
+    border-color: #6c5ce7;
+    background: #6c5ce7;
+    color: #fff;
+}
+
+/* Form Styles */
+.onboarding-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+    transition: all 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #6c5ce7;
+    box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.2);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* Checkbox group */
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.checkbox-label:hover {
+    border-color: var(--input-focus-border);
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #6c5ce7;
+}
+
+/* File Upload */
+.file-upload-box {
+    border: 2px dashed var(--input-border);
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--input-bg);
+}
+
+.file-upload-box:hover {
+    border-color: #6c5ce7;
+    background: rgba(108, 92, 231, 0.05);
+}
+
+.upload-icon {
+    font-size: 30px;
+    margin-bottom: 10px;
+    opacity: 0.7;
+}
+
+.file-upload-text {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.file-upload-text span {
+    color: #6c5ce7;
+    font-weight: 600;
+}
+
+.file-input {
+    display: none;
+}
+
+/* Actions */
+.onboarding-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--card-border);
+}
+
+.btn-prev,
+.btn-next {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.btn-prev {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--card-border);
+}
+
+.btn-prev:hover {
+    background: var(--input-bg);
+}
+
+.btn-next {
+    background: #6c5ce7;
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
+}
+
+.btn-next:hover {
+    background: #5a4bd4;
+}
+
+@media (max-width: 600px) {
+    .onboarding-card {
+        padding: 24px;
+    }
+
+    .checkbox-grid {
+        grid-template-columns: 1fr;
+    }
+}

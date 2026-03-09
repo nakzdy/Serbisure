@@ -1,14 +1,27 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 function SettingsPage({ settings, onUpdateSettings }) {
     const [localEmail, setLocalEmail] = useState("user@example.com");
     const [localPassword, setLocalPassword] = useState("********");
     const [saveMessage, setSaveMessage] = useState("");
+    const [avatarPreview, setAvatarPreview] = useState(null);
+    const fileInputRef = useRef(null);
 
     const handleSave = () => {
         setSaveMessage("Changes saved successfully!");
         setTimeout(() => setSaveMessage(""), 3000);
         onUpdateSettings({ ...settings }); // Trigger notification in App.jsx
+    };
+
+    const handlePictureChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setAvatarPreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     return (
@@ -42,16 +55,27 @@ function SettingsPage({ settings, onUpdateSettings }) {
                                 width: "80px",
                                 height: "80px",
                                 borderRadius: "50%",
-                                background: "var(--accent)",
+                                background: avatarPreview ? "none" : "var(--accent)",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
                                 fontSize: "30px",
-                                color: "#fff"
+                                color: "#fff",
+                                overflow: "hidden",
+                                border: avatarPreview ? "2px solid var(--accent)" : "none"
                             }}>
-                                👤
+                                {avatarPreview ? (
+                                    <img src={avatarPreview} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                ) : <i className="fa-solid fa-user" style={{ fontSize: "32px", color: "var(--text-muted)" }}></i>}
                             </div>
-                            <button className="btn-primary" style={{ width: "auto", padding: "10px 20px" }}>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                accept="image/*"
+                                onChange={handlePictureChange}
+                                style={{ display: "none" }}
+                            />
+                            <button className="btn-primary" style={{ width: "auto", padding: "10px 20px" }} onClick={() => fileInputRef.current.click()}>
                                 Change Picture
                             </button>
                         </div>

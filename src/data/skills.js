@@ -1,7 +1,10 @@
 export const skillCategories = [
-  "Babysitter",
-  "Plumber",
-  "Appliance Repair",
-  "Electrical Service",
+  "Plumbing",
+  "Electrical",
+  "Cleaning",
   "Carpentry",
+  "Babysitting",
+  "Pet Care",
+  "Painting",
+  "General Help",
 ];

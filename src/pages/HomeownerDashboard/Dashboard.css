@@ -109,7 +109,7 @@
 }
 
 .dashboard-tab:hover {
-    color: #fff;
+    color: var(--text);
 }
 
 .dashboard-tab.active {
@@ -130,7 +130,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #6b6b8a;
+    color: var(--text-muted);
 }
 
 .filter-dropdown {
@@ -150,17 +150,17 @@
 }
 
 .filter-dropdown:hover {
-    border-color: rgba(255, 255, 255, 0.15);
+    border-color: var(--input-focus-border);
 }
 
 .filter-star {
-    color: #c0c0d8;
+    color: var(--text-muted);
     font-size: 14px;
 }
 
 .filter-chevron {
     font-size: 10px;
-    color: #6b6b8a;
+    color: var(--text-muted);
     margin-left: 2px;
 }
 

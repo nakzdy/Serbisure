@@ -46,7 +46,7 @@ function ProfilePage({ user, onUpdateProfile }) {
                     width: "100%",
                     textAlign: "center"
                 }}>
-                    ✓ Profile updated successfully!
+                    <span><i className="fa-solid fa-check"></i> Profile updated successfully!</span>
                 </div>
             )}
 
@@ -84,7 +84,7 @@ function ProfilePage({ user, onUpdateProfile }) {
                             fontSize: "48px",
                             boxShadow: "0 8px 24px rgba(108, 92, 231, 0.3)"
                         }}>
-                            👤
+                            <i className="fa-solid fa-user" style={{ fontSize: "60px", color: "var(--text-muted)", opacity: 0.5 }}></i>
                         </div>
                         <span style={{
                             padding: "5px 14px",

@@ -13,7 +13,7 @@ export const activeRequests = [
         image: "/pipe_repair.png",
         worker: {
             name: "Marcus J.",
-            avatar: "👤",
+            avatar: "fa-solid fa-user",
             rating: 4.9,
             reviews: 120,
         },
@@ -44,7 +44,7 @@ export const activeRequests = [
         image: "/deep_cleaning.png",
         worker: {
             name: "Sarah L.",
-            avatar: "👤",
+            avatar: "fa-solid fa-user",
             rating: 4.8,
             reviews: 85,
         },
@@ -59,7 +59,7 @@ export const topRatedWorkers = [
         rating: 5.0,
         reliability: "96% Reliability",
         verified: true,
-        avatar: "🧑‍🔧",
+        avatar: "fa-solid fa-user-gear",
     },
     {
         id: 2,
@@ -68,7 +68,7 @@ export const topRatedWorkers = [
         rating: 4.9,
         reliability: "96% Reliability",
         verified: true,
-        avatar: "👩‍🎨",
+        avatar: "fa-solid fa-paint-roller",
     },
     {
         id: 3,
@@ -77,7 +77,7 @@ export const topRatedWorkers = [
         rating: 4.2,
         reliability: "Below threshold",
         verified: false,
-        avatar: "🧑‍🔧",
+        avatar: "fa-solid fa-user-gear",
         belowThreshold: true,
     },
 ];
