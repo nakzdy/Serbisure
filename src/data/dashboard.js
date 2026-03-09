@@ -105,3 +105,36 @@ export const dashboardNotifications = [
         unread: false,
     },
 ];
+
+export const workerStats = {
+    totalEarnings: "$2,450",
+    completedJobs: 42,
+    rating: 4.9,
+    reliability: "98%",
+    activeJobs: 3
+};
+
+export const incomingJobs = [
+    {
+        id: 101,
+        title: "Kitchen Sink Leak",
+        category: "Plumbing",
+        priority: "High",
+        customer: "Sarah Johnson",
+        location: "Quezon City",
+        estimatedPay: "$65",
+        time: "Requested 15m ago",
+        status: "pending"
+    },
+    {
+        id: 102,
+        title: "Garden Lighting Sync",
+        category: "Electrical",
+        priority: "Medium",
+        customer: "Robert Lim",
+        location: "Makati City",
+        estimatedPay: "$120",
+        time: "Requested 1h ago",
+        status: "pending"
+    }
+];
