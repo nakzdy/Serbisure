@@ -149,7 +149,7 @@ function RegistrationForm({ title, subtitle, roles, skills, onRegister }) {
                         <div className="form-row">
                             <label>Upload ID &amp; TESDA Certificate</label>
                             <div className="file-input">
-                                <input type="file" />
+                                <input type="file" required />
                             </div>
                         </div>
                     </>
