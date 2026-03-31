@@ -1,0 +1,526 @@
+/* =============================================
+   SerbiSure — Gmail-Style Registration Form
+   ============================================= */
+
+/* Google Button */
+.reg-google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 13px 16px;
+    border-radius: 12px;
+    background: #fff;
+    border: 1.5px solid #dadce0;
+    color: #3c4043;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: box-shadow 0.2s, background 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+
+.reg-google-btn:hover {
+    box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+    background: #f8f9fa;
+}
+
+.reg-google-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* OR Divider */
+.reg-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-muted);
+    font-size: 12px;
+    letter-spacing: 0.4px;
+}
+
+.reg-divider::before,
+.reg-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--card-border);
+}
+
+
+.reg-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 40px 20px;
+    box-sizing: border-box;
+}
+
+.reg-card {
+    width: 100%;
+    max-width: 480px;
+    background: var(--card-bg);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--card-border);
+    border-radius: 24px;
+    padding: 40px 36px;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* Header */
+.reg-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.reg-logo {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
+    box-shadow: 0 4px 20px var(--accent-glow);
+    margin-bottom: 4px;
+}
+
+.reg-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+    text-align: center;
+    letter-spacing: -0.3px;
+}
+
+.reg-subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 0;
+    text-align: center;
+    line-height: 1.5;
+}
+
+/* Step Indicator */
+.reg-steps {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 8px;
+}
+
+.reg-steps-track {
+    position: absolute;
+    top: 50%;
+    left: 8px;
+    right: 8px;
+    height: 2px;
+    background: rgba(255,255,255,0.08);
+    transform: translateY(-50%);
+    z-index: 0;
+    border-radius: 2px;
+}
+
+.reg-steps-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+}
+
+.reg-step-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+    border: 2px solid rgba(255,255,255,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    z-index: 1;
+    transition: all 0.3s ease;
+}
+
+.reg-step-dot.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
+.reg-step-dot.done {
+    background: var(--accent-dark);
+    border-color: var(--accent-dark);
+    color: #fff;
+}
+
+.reg-step-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    margin: -4px 0 0;
+}
+
+.reg-step-label strong {
+    color: var(--accent);
+}
+
+/* Form */
+.reg-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Floating label field */
+.reg-field {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.reg-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.reg-input {
+    padding: 13px 16px;
+    border-radius: 12px;
+    border: 1.5px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--text);
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.reg-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+    background: rgba(255, 255, 255, 0.09);
+}
+
+.reg-input::placeholder {
+    color: rgba(255,255,255,0.2);
+}
+
+.reg-select {
+    cursor: pointer;
+    padding-right: 44px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 7l5 5 5-5' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 14px;
+}
+
+.reg-select option {
+    background: #1e1e30;
+    color: #f0f0f5;
+}
+
+/* Password wrapper */
+.reg-pw-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.reg-pw-wrapper .reg-input {
+    padding-right: 70px;
+}
+
+.reg-pw-toggle {
+    position: absolute;
+    right: 12px;
+    background: rgba(255,255,255,0.08);
+    border: none;
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.reg-pw-toggle:hover {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+}
+
+/* Password strength */
+.reg-strength {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: -6px;
+}
+
+.reg-strength-bars {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+}
+
+.reg-strength-bar {
+    height: 4px;
+    flex: 1;
+    border-radius: 4px;
+    transition: background 0.3s;
+}
+
+/* File upload zone */
+.reg-file-zone {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 20px;
+    border: 1.5px dashed rgba(255,255,255,0.15);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    text-align: center;
+}
+
+.reg-file-zone:hover {
+    border-color: var(--accent);
+    background: rgba(99,140,255,0.05);
+}
+
+.reg-file-icon {
+    font-size: 22px;
+    margin-bottom: 2px;
+}
+
+.reg-file-hidden {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+}
+
+/* Review summary */
+.reg-review {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 4px 0;
+    overflow: hidden;
+}
+
+.reg-review-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.reg-review-row:last-child {
+    border-bottom: none;
+}
+
+.reg-review-row span {
+    color: var(--text-muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.reg-review-row strong {
+    color: var(--text);
+    font-weight: 600;
+    max-width: 260px;
+    text-align: right;
+    word-break: break-all;
+}
+
+/* Terms */
+.reg-terms {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.6;
+    margin: -4px 0;
+}
+
+/* Buttons */
+.reg-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 20px var(--accent-glow);
+    transition: transform 0.15s, box-shadow 0.15s;
+    text-align: center;
+    text-decoration: none;
+}
+
+.reg-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(99,140,255,0.4);
+}
+
+.reg-btn:active {
+    transform: translateY(0);
+}
+
+.reg-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.reg-btn-row {
+    display: flex;
+    gap: 10px;
+}
+
+.reg-btn-row .reg-btn-ghost {
+    flex: 0 0 auto;
+    width: auto;
+    padding: 14px 18px;
+}
+
+.reg-btn-row .reg-btn {
+    flex: 1;
+}
+
+.reg-btn-ghost {
+    display: block;
+    padding: 14px 18px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.06);
+    border: 1.5px solid var(--card-border);
+    color: var(--text-muted);
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.reg-btn-ghost:hover {
+    background: rgba(255,255,255,0.1);
+    color: var(--text);
+}
+
+/* Error */
+.reg-error {
+    padding: 11px 14px;
+    border-radius: 10px;
+    background: rgba(252,92,101,0.1);
+    border: 1px solid rgba(252,92,101,0.25);
+    color: #fc5c65;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Links */
+.reg-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.reg-link:hover {
+    text-decoration: underline;
+}
+
+/* Footer */
+.reg-footer {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-align: center;
+    margin: 0;
+}
+
+/* Success */
+.reg-success-card {
+    align-items: center;
+    text-align: center;
+    padding: 60px 36px;
+    gap: 14px;
+}
+
+.reg-success-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 4px 24px var(--accent-glow);
+    animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes pop {
+    from { transform: scale(0.5); opacity: 0; }
+    to   { transform: scale(1);   opacity: 1; }
+}
+
+@media (max-width: 520px) {
+    .reg-card {
+        padding: 28px 20px;
+        border-radius: 18px;
+    }
+
+    .reg-btn-row {
+        flex-direction: column-reverse;
+    }
+
+    .reg-btn-row .reg-btn-ghost {
+        width: 100%;
+    }
+}

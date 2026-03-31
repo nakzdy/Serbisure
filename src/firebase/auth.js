@@ -13,9 +13,23 @@ import {
     signInWithEmailAndPassword,
     signOut,
     updateProfile,
-    onAuthStateChanged
+    onAuthStateChanged,
+    GoogleAuthProvider,
+    signInWithPopup
 } from "firebase/auth";
 import { auth } from "./config";
+
+/**
+ * Sign in or register with Google OAuth via popup.
+ * Firebase handles the entire OAuth 2.0 flow.
+ * Returns the user credential on success.
+ */
+export async function signInWithGoogle() {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    return await signInWithPopup(auth, provider);
+}
+
 
 /**
  * Register a new user with Firebase Authentication.
