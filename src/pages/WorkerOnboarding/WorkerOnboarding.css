@@ -204,7 +204,7 @@
     font-weight: 600;
 }
 
-.file-input {
+.file-upload-box .file-input {
     display: none;
 }
 

@@ -4,7 +4,6 @@ import { signInWithGoogle } from "../../firebase/auth";
 import { setUserProfile } from "../../firebase/db";
 import "./RegistrationForm.css";
 
-
 const STEPS = ["Account", "Profile", "Confirm"];
 
 function PasswordStrength({ password }) {
@@ -95,7 +94,6 @@ function RegistrationForm({ title, subtitle, roles, skills, onRegister }) {
         try {
             const result = await signInWithGoogle();
             const user = result.user;
-            // Save the Google user profile to Firestore
             await setUserProfile(user.uid, {
                 name: user.displayName || "",
                 email: user.email,
@@ -118,7 +116,6 @@ function RegistrationForm({ title, subtitle, roles, skills, onRegister }) {
         setFormData(prev => ({ ...prev, [name]: value }));
         setError("");
     }
-
 
     function handleNext(e) {
         e.preventDefault();
@@ -179,7 +176,7 @@ function RegistrationForm({ title, subtitle, roles, skills, onRegister }) {
                 <StepIndicator current={step} total={STEPS.length} />
                 <p className="reg-step-label">Step {step + 1} of {STEPS.length} — <strong>{STEPS[step]}</strong></p>
 
-                {/* Google Sign-in */}
+                {/* Google Sign-in — only on step 0 */}
                 {step === 0 && (
                     <>
                         <button
@@ -196,7 +193,6 @@ function RegistrationForm({ title, subtitle, roles, skills, onRegister }) {
                             </svg>
                             {googleLoading ? "Connecting..." : "Continue with Google"}
                         </button>
-
                         <div className="reg-divider">
                             <span>or register with email</span>
                         </div>
