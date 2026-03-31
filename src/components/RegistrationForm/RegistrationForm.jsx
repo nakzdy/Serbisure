@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { signInWithGoogle } from "../../firebase/auth";
-import { setUserProfile } from "../../firebase/db";
+import { signInWithGoogle, logoutUser } from "../../firebase/auth";
+import { getUserProfile } from "../../firebase/db";
 import "./RegistrationForm.css";
 
 const STEPS = ["Account", "Profile", "Confirm"];
@@ -76,7 +76,7 @@ function StepIndicator({ current, total }) {
     );
 }
 
-function RegistrationForm({ title, subtitle, roles, skills, onRegister }) {
+function RegistrationForm({ title, subtitle, roles, skills, onRegister, onGoogleComplete, onValidateStart, onValidateEnd }) {
     const navigate = useNavigate();
     const [step, setStep] = useState(0);
     const [formData, setFormData] = useState({
@@ -87,28 +87,57 @@ function RegistrationForm({ title, subtitle, roles, skills, onRegister }) {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
+    const [googleUser, setGoogleUser] = useState(null); // holds Google result before role pick
+    const [googleRole, setGoogleRole] = useState(roles[0]);
+    const [googleSkill, setGoogleSkill] = useState(skills[0]);
 
     async function handleGoogleSignIn() {
+        if (onValidateStart) onValidateStart();
         setGoogleLoading(true);
         setError("");
         try {
             const result = await signInWithGoogle();
-            const user = result.user;
-            await setUserProfile(user.uid, {
-                name: user.displayName || "",
-                email: user.email,
-                role: roles[0],
-                skill: skills[0],
-                photoURL: user.photoURL || "",
-                provider: "google",
-            });
-            navigate("/");
+            
+            // Check if profile already exists in DB to prevent "re-registering"
+            const profile = await getUserProfile(result.user.uid);
+            if (profile && profile.role) {
+                await logoutUser(); // Sign out right away
+                setError("This Google account is already registered. Please go to Login.");
+                setGoogleLoading(false);
+                if (onValidateEnd) onValidateEnd();
+                return;
+            }
+
+            // Don't save yet — show role picker first
+            setGoogleUser(result.user);
         } catch (err) {
-            if (err.code !== "auth/popup-closed-by-user") {
-                setError("Google sign-in failed. Please try again.");
+            console.error("Google Auth Error:", err);
+            const googleErrorMessages = {
+                "auth/popup-closed-by-user": null, // silent
+                "auth/cancelled-popup-request": null, // silent
+                "auth/unauthorized-domain": "This domain is not authorized for Google Sign-in. Please add it in Firebase Console.",
+                "auth/account-exists-with-different-credential": "This email is already registered with email & password. Please sign in using your password instead.",
+                "auth/email-already-in-use": "This email is already registered. Please sign in instead.",
+                "auth/user-disabled": "This account has been disabled. Please contact support.",
+                "auth/popup-blocked": "Popup was blocked by your browser. Please allow popups and try again.",
+            };
+            const msg = googleErrorMessages[err.code];
+            if (msg !== null) {
+                setError(msg || "Google sign-in failed. Please try again.");
             }
         }
+        if (onValidateEnd) onValidateEnd();
         setGoogleLoading(false);
+    }
+
+    async function handleGoogleRoleConfirm() {
+        setLoading(true);
+        setError("");
+        const result = await onGoogleComplete(googleUser, googleRole, googleSkill);
+        if (result && !result.success) {
+            setError("Failed to save your profile. Please try again.");
+        }
+        setLoading(false);
     }
 
     function handleChange(e) {
@@ -157,6 +186,83 @@ function RegistrationForm({ title, subtitle, roles, skills, onRegister }) {
                     <h2 className="reg-title">You're all set!</h2>
                     <p className="reg-subtitle">Welcome to SerbiSure, <strong>{formData.name}</strong>!<br />Your account has been created successfully.</p>
                     <Link to="/login" className="reg-btn">Go to Login</Link>
+                </div>
+            </div>
+        );
+    }
+
+    // After Google sign-in — show role picker before saving
+    if (googleUser) {
+        return (
+            <div className="reg-wrapper">
+                <div className="reg-card">
+                    <div className="reg-header">
+                        {googleUser.photoURL && (
+                            <img src={googleUser.photoURL} alt="avatar" className="reg-google-avatar" />
+                        )}
+                        <h2 className="reg-title">One more step!</h2>
+                        <p className="reg-subtitle">
+                            Hi <strong>{googleUser.displayName}</strong>! How will you use SerbiSure?
+                        </p>
+                    </div>
+
+                    {error && <div className="reg-error">{error}</div>}
+
+                    <div className="reg-role-picker">
+                        {roles.map((r) => (
+                            <button
+                                key={r}
+                                type="button"
+                                className={`reg-role-card ${googleRole === r ? "selected" : ""}`}
+                                onClick={() => setGoogleRole(r)}
+                            >
+                                <span className="reg-role-icon">
+                                    {r === "Service Worker" ? "🔧" : "🏠"}
+                                </span>
+                                <strong>{r}</strong>
+                                <span className="reg-role-desc">
+                                    {r === "Service Worker"
+                                        ? "I offer domestic services"
+                                        : "I am looking to hire a worker"}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {googleRole === "Service Worker" && (
+                        <div className="reg-field lifted" style={{ marginTop: "4px" }}>
+                            <label className="reg-label" htmlFor="gskill">Primary skill</label>
+                            <select
+                                id="gskill"
+                                className="reg-input reg-select"
+                                value={googleSkill}
+                                onChange={e => setGoogleSkill(e.target.value)}
+                            >
+                                {skills.map((s, i) => <option key={i} value={s}>{s}</option>)}
+                            </select>
+                        </div>
+                    )}
+
+                    <button
+                        type="button"
+                        className="reg-btn"
+                        onClick={handleGoogleRoleConfirm}
+                        disabled={loading}
+                    >
+                        {loading ? "Saving..." : "Continue →"}
+                    </button>
+
+                    <p className="reg-footer">
+                        Wrong account?{" "}
+                        <button
+                            type="button"
+                            className="reg-link"
+                            style={{ background: "none", border: "none", cursor: "pointer", padding: 0, font: "inherit" }}
+                            onClick={() => setGoogleUser(null)}
+                        >
+                            Go back
+                        </button>
+                    </p>
                 </div>
             </div>
         );

@@ -23,6 +23,7 @@ function AppContent() {
     const [notifications, setNotifications] = useState([]);
     const [authLoading, setAuthLoading] = useState(true);
     const [isValidatingRole, setIsValidatingRole] = useState(false);
+    const [needsRoleSetup, setNeedsRoleSetup] = useState(false); // true when Google user has no role yet
     const [settings, setSettings] = useState({
         darkMode: true,
         language: "English"
@@ -53,6 +54,14 @@ function AppContent() {
                 // User is signed in — Fetch their persistent profile from Firestore
                 const profile = await getUserProfile(firebaseUser.uid);
 
+                // If no role saved yet (new Google sign-in) — pause and let role picker show
+                if (!profile?.role) {
+                    setNeedsRoleSetup(true);
+                    setAuthLoading(false);
+                    return;
+                }
+
+                setNeedsRoleSetup(false);
                 setIsAuthenticated(true);
                 setUser(prev => ({
                     ...prev,
@@ -66,6 +75,7 @@ function AppContent() {
                 }));
             } else if (!firebaseUser) {
                 // User is signed out
+                setNeedsRoleSetup(false);
                 setIsAuthenticated(false);
                 setUser({ name: "", email: "", role: "", about: "", skills: "", location: "", isWorkerOnboarded: false });
             }
@@ -125,6 +135,38 @@ function AppContent() {
         } catch (error) {
             setIsValidatingRole(false);
             return { success: false, error: error.code };
+        }
+    };
+
+    // Google OAuth: Called after user picks their role in the role picker
+    const handleGoogleComplete = async (googleUser, role, skill) => {
+        try {
+            const isWorker = role === "Service Worker";
+            const profileData = {
+                name: googleUser.displayName || "",
+                email: googleUser.email,
+                role: isWorker ? "worker" : "homeowner",
+                skills: isWorker ? skill : "",
+                isWorkerOnboarded: isWorker,
+                workerProfile: isWorker ? { skills: [skill] } : null,
+                photoURL: googleUser.photoURL || "",
+                provider: "google",
+            };
+            await setUserProfile(googleUser.uid, profileData);
+            setNeedsRoleSetup(false);
+            setIsAuthenticated(true);
+            setUser(prev => ({
+                ...prev,
+                uid: googleUser.uid,
+                name: googleUser.displayName || googleUser.email.split('@')[0],
+                email: googleUser.email,
+                ...profileData
+            }));
+            addNotification(`Welcome to SerbiSure, ${googleUser.displayName || googleUser.email}!`);
+            navigate("/dashboard");
+            return { success: true };
+        } catch (err) {
+            return { success: false, error: err.message };
         }
     };
 
@@ -214,8 +256,13 @@ function AppContent() {
                             <Navigate to="/dashboard" />
                     } />
                     <Route path="/register" element={
-                        !isAuthenticated ?
-                            <Registration onRegister={handleRegister} /> :
+                        !isAuthenticated || needsRoleSetup ?
+                            <Registration 
+                                onRegister={handleRegister} 
+                                onGoogleComplete={handleGoogleComplete}
+                                onValidateStart={() => setIsValidatingRole(true)}
+                                onValidateEnd={() => setIsValidatingRole(false)}
+                            /> :
                             <Navigate to="/dashboard" />
                     } />
 

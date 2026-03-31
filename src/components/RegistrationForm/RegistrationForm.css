@@ -2,6 +2,66 @@
    SerbiSure — Gmail-Style Registration Form
    ============================================= */
 
+/* Google Avatar */
+.reg-google-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 3px solid var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-glow);
+    margin-bottom: 4px;
+}
+
+/* Role Picker Cards */
+.reg-role-picker {
+    display: flex;
+    gap: 12px;
+}
+
+.reg-role-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 18px 12px;
+    border-radius: 14px;
+    border: 2px solid var(--card-border);
+    background: var(--input-bg);
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    color: var(--text);
+    font-family: inherit;
+    text-align: center;
+}
+
+.reg-role-card:hover {
+    border-color: var(--accent);
+    background: rgba(99, 140, 255, 0.05);
+    transform: translateY(-2px);
+}
+
+.reg-role-card.selected {
+    border-color: var(--accent);
+    background: rgba(99, 140, 255, 0.1);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.reg-role-icon {
+    font-size: 28px;
+}
+
+.reg-role-card strong {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.reg-role-desc {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
 /* Google Button */
 .reg-google-btn {
     display: flex;
