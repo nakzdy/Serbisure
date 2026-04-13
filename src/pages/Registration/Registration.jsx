@@ -2,7 +2,7 @@ import { BrandingHeader, RegistrationForm, RegistrationFooter } from "../../comp
 import { appName, systemInfo, userRoles } from "../../data/system";
 import { skillCategories } from "../../data/skills";
 
-function Registration({ onNavigateToLogin, onRegister, onGoogleComplete, onValidateStart, onValidateEnd }) {
+function Registration({ onNavigateToLogin, onRegister, onGoogleComplete, onValidateStart, onValidateEnd, pendingGoogleUser, setPendingGoogleUser }) {
   return (
     <main className="page-wrapper">
       <BrandingHeader title={appName} />
@@ -15,6 +15,8 @@ function Registration({ onNavigateToLogin, onRegister, onGoogleComplete, onValid
         onGoogleComplete={onGoogleComplete}
         onValidateStart={onValidateStart}
         onValidateEnd={onValidateEnd}
+        pendingGoogleUser={pendingGoogleUser}
+        setPendingGoogleUser={setPendingGoogleUser}
       />
       <RegistrationFooter
         name={systemInfo.name}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { registerUser, loginUser, logoutUser, onAuthChange } from "./firebase/auth";
+import { registerUser, loginUser, logoutUser, onAuthChange, signInWithGoogle } from "./firebase/auth";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import "./styles/App.css";
 import Registration from "./pages/Registration/Registration";
@@ -15,6 +15,7 @@ import SettingsPage from "./pages/Settings/SettingsPage";
 import WorkerDashboardPage from "./pages/WorkerDashboard/WorkerDashboardPage";
 import WorkerOnboardingPage from "./pages/WorkerOnboarding/WorkerOnboardingPage";
 import { setUserProfile, getUserProfile } from "./firebase/db";
+import { authAPI, servicesAPI, bookingsAPI } from "./api/api";
 
 function AppContent() {
     const navigate = useNavigate();
@@ -22,56 +23,105 @@ function AppContent() {
     const [user, setUser] = useState({ name: "", email: "", role: "", about: "", skills: "", location: "", isWorkerOnboarded: false });
     const [notifications, setNotifications] = useState([]);
     const [authLoading, setAuthLoading] = useState(true);
+    const [isAppInitializing, setIsAppInitializing] = useState(true); // Control Splash Screen only on first mount
     const [isValidatingRole, setIsValidatingRole] = useState(false);
-    const [needsRoleSetup, setNeedsRoleSetup] = useState(false); // true when Google user has no role yet
+    const [needsRoleSetup, setNeedsRoleSetup] = useState(false); 
+    const [pendingGoogleUser, setPendingGoogleUser] = useState(null); 
     const [settings, setSettings] = useState({
         darkMode: true,
         language: "English"
     });
 
     // Mock initial workers
-    const [workers, setWorkers] = useState([
-        { id: 1, name: "Juana Dela Cruz", tesdaCertificate: true, status: "verified", reliabilityScore: 92, skills: "Plumbing, Pipes, Drainage" },
-        { id: 2, name: "Mario Rossi", tesdaCertificate: false, status: "verified", reliabilityScore: 85, skills: "Electrical, Wiring, Lighting" },
-        { id: 3, name: "Maria Clara", tesdaCertificate: true, status: "pending", reliabilityScore: 60, skills: "Cleaning, Janitorial" },
-        { id: 4, name: "Roberto G.", tesdaCertificate: true, status: "verified", reliabilityScore: 95, skills: "Carpentry, Furniture, Repair" },
-        { id: 5, name: "Elena R.", tesdaCertificate: false, status: "verified", reliabilityScore: 88, skills: "Babysitting, Child Care" },
-        { id: 6, name: "Paolo M.", tesdaCertificate: false, status: "pending", reliabilityScore: 78, skills: "Pet Care, Dog Walking" },
-        { id: 7, name: "Liza S.", tesdaCertificate: true, status: "verified", reliabilityScore: 90, skills: "General Help, Gardening" },
-        { id: 8, name: "Daniel A.", tesdaCertificate: false, status: "verified", reliabilityScore: 82, skills: "Carpentry, Home Repair" },
-    ]);
+    const [workers, setWorkers] = useState([]); // Will play real data from Django
+    const [loadingWorkers, setLoadingWorkers] = useState(true);
 
     // Mock initial bookings
     const [bookings, setBookings] = useState([
         { id: 1, workerName: "Juana Dela Cruz", serviceType: "Plumbing", status: "pending" },
     ]);
 
+    // Fetch real workers/services from Django on mount
+    useEffect(() => {
+        const fetchRealServices = async () => {
+            try {
+                const data = await servicesAPI.getServices();
+                // Map Django service model to frontend worker model
+                const mappedWorkers = data.map(service => ({
+                    id: service.id,
+                    name: service.provider_name || service.name,
+                    status: "verified",
+                    reliabilityScore: 90,
+                    skills: service.description,
+                    price: service.price_per_hour
+                }));
+                setWorkers(mappedWorkers);
+            } catch (err) {
+                console.error("Failed to fetch real services:", err);
+            } finally {
+                setLoadingWorkers(false);
+            }
+        };
+        fetchRealServices();
+    }, []);
+
     // Firebase Auth state observer — listens for session changes over HTTPS/TLS
     useEffect(() => {
         const unsubscribe = onAuthChange(async (firebaseUser) => {
             // ONLY auto-authenticate if we aren't in the middle of a manual login validation
             if (firebaseUser && !isValidatingRole) {
-                // User is signed in — Fetch their persistent profile from Firestore
+                // Remove setAuthLoading(true) to avoid full-page unmount during checks
+                
+                // 1. Fetch legacy profile if it exists
                 const profile = await getUserProfile(firebaseUser.uid);
+                let finalRole = null;
+                let djangoUser = null;
 
-                // If no role saved yet (new Google sign-in) — pause and let role picker show
-                if (!profile?.role) {
-                    setNeedsRoleSetup(true);
+                // 2. ALWAYS verify/sync with Django Backend (Source of Truth)
+                try {
+                    const djangoData = await authAPI.googleSync({
+                        email: firebaseUser.email,
+                        password: firebaseUser.uid,
+                        full_name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+                    });
+
+                    djangoUser = djangoData.user;
+                    if (djangoUser && (djangoUser.role === "service_worker" || djangoUser.role === "homeowner")) {
+                        finalRole = djangoUser.role === "service_worker" ? "worker" : "homeowner";
+                    }
+                } catch (err) {
+                    if (err.response?.status === 404) {
+                        console.log("Django account missing.");
+                    } else {
+                        console.error("Django sync failed:", err.message);
+                    }
+                }
+
+                // 3. Final Check: If Django doesn't know the role, we MUST select it
+                if (!finalRole) {
+                    // Only auto-trigger setup if we aren't in a middle of a manual validation check
+                    if (!isValidatingRole) {
+                        console.log("No valid Django role found. Forcing role setup.");
+                        setPendingGoogleUser(firebaseUser); 
+                        setNeedsRoleSetup(true);
+                    }
                     setAuthLoading(false);
+                    setIsAppInitializing(false); // First check done
                     return;
                 }
 
+                // 4. Success — Update Global State
                 setNeedsRoleSetup(false);
                 setIsAuthenticated(true);
                 setUser(prev => ({
                     ...prev,
-                    uid: firebaseUser.uid,
-                    name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+                    uid: djangoUser?.id || firebaseUser.uid,
+                    name: djangoUser?.full_name || firebaseUser.displayName || firebaseUser.email.split('@')[0],
                     email: firebaseUser.email,
-                    role: profile?.role || prev.role || "homeowner",
+                    role: finalRole,
                     skills: profile?.skills || prev.skills || "",
-                    isWorkerOnboarded: profile?.isWorkerOnboarded || prev.isWorkerOnboarded || false,
-                    workerProfile: profile?.workerProfile || prev.workerProfile || null
+                    isWorkerOnboarded: finalRole === "worker",
+                    ...profile
                 }));
             } else if (!firebaseUser) {
                 // User is signed out
@@ -79,62 +129,115 @@ function AppContent() {
                 setIsAuthenticated(false);
                 setUser({ name: "", email: "", role: "", about: "", skills: "", location: "", isWorkerOnboarded: false });
             }
+            
+            // Finish ALL loading states on first run
             setAuthLoading(false);
+            setIsAppInitializing(false);
         });
         return () => unsubscribe();
-    }, [isValidatingRole]); // Re-subscribe if validation state changes
+    }, [isValidatingRole]);
 
     const addNotification = (message) => {
         setNotifications((prev) => [...prev, { id: Date.now(), message }]);
     };
 
-    // Firebase Auth: Email/Password sign-in (encrypted via HTTPS/TLS)
+    // Integrated Auth: Django Login + Token Persistence
     const handleLogin = async (email, password, role) => {
-        setIsValidatingRole(true); // LOCK: Prevent onAuthChange from auto-redirecting
+        setIsValidatingRole(true);
         try {
-            const userCredential = await loginUser(email, password);
+            // 1. Authenticate with Django Backend
+            const djangoData = await authAPI.login(email, password);
+
+            // 2. Authenticate with Firebase (to keep the Session Observer happy)
+            await loginUser(email, password);
+
+            // 3. Validate Role if provided
             const isWorkerSelection = role === "Service Worker";
+            const actualRole = djangoData.user.role; // "service_worker" or "homeowner"
+            const expectedRole = isWorkerSelection ? "service_worker" : "homeowner";
 
-            // Check if user already has a role in Firestore
-            const profile = await getUserProfile(userCredential.user.uid);
-
-            if (profile) {
-                const actualRole = profile.role; // "worker" or "homeowner"
-                const expectedRole = isWorkerSelection ? "worker" : "homeowner";
-
-                // VALIDATION: Block if the role doesn't match the registration
-                if (actualRole !== expectedRole) {
-                    await logoutUser(); // Immediately sign out the invalid session
-                    setIsValidatingRole(false);
-                    return { success: false, error: "auth/role-mismatch" };
-                }
+            if (actualRole !== expectedRole) {
+                authAPI.logout();
+                await logoutUser(); // Log out from Firebase too if role mismatch
+                setIsValidatingRole(false);
+                return { success: false, error: "auth/role-mismatch" };
             }
 
-            const finalRole = profile?.role || (isWorkerSelection ? "worker" : "homeowner");
+            // 4. Update Global State
+            setUser({
+                uid: djangoData.user.id,
+                name: djangoData.user.full_name || djangoData.user.email.split('@')[0],
+                email: djangoData.user.email,
+                role: actualRole === "service_worker" ? "worker" : "homeowner",
+                isWorkerOnboarded: actualRole === "service_worker",
+            });
 
-            setUser(prev => ({
-                ...prev,
-                uid: userCredential.user.uid,
-                role: finalRole,
-                isWorkerOnboarded: profile?.isWorkerOnboarded || isWorkerSelection
-            }));
-
-            // Persist the login role if it's new (fallback for legacy accounts)
-            if (!profile) {
-                await setUserProfile(userCredential.user.uid, {
-                    role: finalRole,
-                    isWorkerOnboarded: false
-                });
-            }
-
-            setIsAuthenticated(true); // Finalize authentication state
+            setIsAuthenticated(true);
             setIsValidatingRole(false);
-            addNotification(`Welcome back!`);
+            addNotification(`Welcome back to SerbiSure!`);
             navigate("/dashboard");
             return { success: true };
         } catch (error) {
             setIsValidatingRole(false);
-            return { success: false, error: error.code };
+            console.error("Manual Login Error:", error);
+            const errorMsg = error.response?.data?.message || error.code || "Login failed. Please check your credentials.";
+            return { success: false, error: errorMsg };
+        }
+    };
+
+    // Google Login: Called from Login.jsx
+    const handleGoogleLogin = async () => {
+        setIsValidatingRole(true);
+        try {
+            // 1. Firebase Google Sign-in
+            const firebaseResult = await signInWithGoogle();
+            const { user: googleUser } = firebaseResult;
+
+            // 2. Check if user already has a setup profile in Firestore
+            const profile = await getUserProfile(googleUser.uid);
+
+            if (!profile || !profile.role) {
+                // Not registered yet — don't logout, just tell the user so they can click register
+                setIsValidatingRole(false);
+                return { success: false, error: "no-account" };
+            }
+
+            // 3. User exists — Sync with Django Backend
+            const djangoData = await authAPI.googleSync({
+                email: googleUser.email,
+                password: googleUser.uid,
+                full_name: googleUser.displayName || googleUser.email.split('@')[0],
+                role: profile.role === "worker" ? "service_worker" : "homeowner"
+            });
+
+            // 4. Update Global State
+            setUser({
+                uid: djangoData.user.id,
+                name: djangoData.user.full_name,
+                email: djangoData.user.email,
+                role: profile.role,
+                ...profile
+            });
+
+            setIsAuthenticated(true);
+            setIsValidatingRole(false);
+            addNotification(`Welcome back, ${djangoData.user.full_name}!`);
+            navigate("/dashboard");
+            return { success: true };
+        } catch (error) {
+            setIsValidatingRole(false);
+            console.error("Google Login Error:", error);
+
+            const djangoErrors = error.response?.data?.errors;
+            let errorMsg = error.response?.data?.message || error.code || "Google sign-in failed.";
+
+            if (djangoErrors) {
+                const firstKey = Object.keys(djangoErrors)[0];
+                const firstError = djangoErrors[firstKey];
+                errorMsg = Array.isArray(firstError) ? firstError[0] : firstError;
+            }
+
+            return { success: false, error: errorMsg };
         }
     };
 
@@ -142,9 +245,19 @@ function AppContent() {
     const handleGoogleComplete = async (googleUser, role, skill) => {
         try {
             const isWorker = role === "Service Worker";
-            const profileData = {
-                name: googleUser.displayName || "",
+            const djangoRole = isWorker ? "service_worker" : "homeowner";
+
+            // 1. Unified Sync: Link Google user with Django backend
+            const djangoData = await authAPI.googleSync({
                 email: googleUser.email,
+                password: googleUser.uid, // Passing UID as a secure placeholder password
+                full_name: googleUser.displayName || googleUser.email.split('@')[0],
+                role: djangoRole
+            });
+
+            const profileData = {
+                name: djangoData.user.full_name,
+                email: djangoData.user.email,
                 role: isWorker ? "worker" : "homeowner",
                 skills: isWorker ? skill : "",
                 isWorkerOnboarded: isWorker,
@@ -152,29 +265,54 @@ function AppContent() {
                 photoURL: googleUser.photoURL || "",
                 provider: "google",
             };
+
+            // 2. Persist to Firestore (Legacy Support)
             await setUserProfile(googleUser.uid, profileData);
+
             setNeedsRoleSetup(false);
             setIsAuthenticated(true);
-            setUser(prev => ({
-                ...prev,
-                uid: googleUser.uid,
-                name: googleUser.displayName || googleUser.email.split('@')[0],
-                email: googleUser.email,
+            setUser({
+                uid: djangoData.user.id,
+                name: djangoData.user.full_name,
+                email: djangoData.user.email,
+                role: profileData.role,
                 ...profileData
-            }));
-            addNotification(`Welcome to SerbiSure, ${googleUser.displayName || googleUser.email}!`);
+            });
+
+            addNotification(`Welcome to SerbiSure!`);
             navigate("/dashboard");
             return { success: true };
         } catch (err) {
-            return { success: false, error: err.message };
+            console.error("Google Sync Error:", err);
+            const djangoErrors = err.response?.data?.errors;
+            let errorMsg = err.response?.data?.message || err.code || "System synchronization failed.";
+
+            if (djangoErrors) {
+                const firstKey = Object.keys(djangoErrors)[0];
+                const firstError = djangoErrors[firstKey];
+                errorMsg = Array.isArray(firstError) ? firstError[0] : firstError;
+            }
+
+            return { success: false, error: errorMsg };
         }
     };
 
-    // Firebase Auth: Create account with email/password (encrypted via HTTPS/TLS)
+    // Integrated Auth: Register with Firebase + Django + Firestore
     const handleRegister = async (email, role, name, password, skill) => {
         try {
-            const userCredential = await registerUser(email, password, name);
             const isWorker = role === "Service Worker";
+            const djangoRole = isWorker ? "service_worker" : "homeowner";
+
+            // 1. Register with Django Backend (Primary Data Source)
+            await authAPI.register({
+                email,
+                password,
+                full_name: name,
+                role: djangoRole
+            });
+
+            // 2. Register with Firebase (For OAuth & Legacy Support)
+            const userCredential = await registerUser(email, password, name);
 
             const profileData = {
                 role: isWorker ? "worker" : "homeowner",
@@ -183,7 +321,7 @@ function AppContent() {
                 workerProfile: isWorker ? { skills: [skill] } : null
             };
 
-            // PERMANENTLY save to Firestore
+            // 3. Save to Firestore
             await setUserProfile(userCredential.user.uid, profileData);
 
             setUser(prev => ({
@@ -192,18 +330,32 @@ function AppContent() {
                 ...profileData
             }));
 
+            setIsAuthenticated(true);
             addNotification(`Welcome to SerbiSure, ${name}!`);
             navigate("/dashboard");
             return { success: true };
         } catch (error) {
-            return { success: false, error: error.code };
+            console.error("Registration Error:", error);
+            // Extract the first error message from Django if possible (e.g. "password too short")
+            const djangoErrors = error.response?.data?.errors;
+            let errorMsg = error.code || "Registration failed.";
+
+            if (djangoErrors) {
+                const firstKey = Object.keys(djangoErrors)[0];
+                const firstError = djangoErrors[firstKey];
+                errorMsg = Array.isArray(firstError) ? firstError[0] : firstError;
+            }
+
+            return { success: false, error: errorMsg };
         }
     };
 
     // Firebase Auth: Sign out (invalidates session token)
     const handleLogout = async () => {
         try {
-            await logoutUser();
+            authAPI.logout();
+            await logoutUser(); // Clear Firebase too if used
+            setIsAuthenticated(false);
             navigate("/login");
         } catch (error) {
             console.error("Logout error:", error);
@@ -245,6 +397,49 @@ function AppContent() {
         addNotification("Settings updated!");
     };
 
+    if (isAppInitializing) {
+        return (
+            <div style={{
+                height: "100vh",
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "var(--bg-1)",
+                color: "white",
+                fontFamily: "var(--font-family)"
+            }}>
+                <div style={{
+                    width: "64px",
+                    height: "64px",
+                    borderRadius: "16px",
+                    background: "linear-gradient(135deg, var(--accent), var(--accent-dark))",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "32px",
+                    fontWeight: "bold",
+                    marginBottom: "24px",
+                    boxShadow: "0 0 30px var(--accent-glow)",
+                    animation: "pulse 2s infinite"
+                }}>
+                    S
+                </div>
+                <div style={{ fontSize: "14px", color: "var(--text-muted)", letterSpacing: "2px", textTransform: "uppercase" }}>
+                    Loading SerbiSure...
+                </div>
+                <style>{`
+                    @keyframes pulse {
+                        0% { transform: scale(1); opacity: 1; }
+                        50% { transform: scale(1.05); opacity: 0.8; }
+                        100% { transform: scale(1); opacity: 1; }
+                    }
+                `}</style>
+            </div>
+        );
+    }
+
     return (
         <div className={`app-container ${!settings.darkMode ? "light-theme" : ""}`}>
             {isAuthenticated && <Navbar user={user} notifications={notifications} onLogout={handleLogout} />}
@@ -252,16 +447,18 @@ function AppContent() {
                 <Routes>
                     <Route path="/login" element={
                         !isAuthenticated ?
-                            <Login onLogin={handleLogin} /> :
+                            <Login onLogin={handleLogin} onGoogleLogin={handleGoogleLogin} /> :
                             <Navigate to="/dashboard" />
                     } />
                     <Route path="/register" element={
                         !isAuthenticated || needsRoleSetup ?
-                            <Registration 
-                                onRegister={handleRegister} 
+                            <Registration
+                                onRegister={handleRegister}
                                 onGoogleComplete={handleGoogleComplete}
                                 onValidateStart={() => setIsValidatingRole(true)}
                                 onValidateEnd={() => setIsValidatingRole(false)}
+                                pendingGoogleUser={pendingGoogleUser}
+                                setPendingGoogleUser={setPendingGoogleUser}
                             /> :
                             <Navigate to="/dashboard" />
                     } />
