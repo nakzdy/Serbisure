@@ -10,11 +10,11 @@ const api = axios.create({
     },
 });
 
-// Automatically attach Token to requests if it exists in localStorage
+// Automatically attach Bearer Token to requests if it exists in localStorage
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('serbisure_token');
     if (token) {
-        config.headers.Authorization = `Token ${token}`;
+        config.headers.Authorization = `Bearer ${token}`; // Module 3: Use Bearer for JWT
     }
     return config;
 });
@@ -22,8 +22,10 @@ api.interceptors.request.use((config) => {
 export const authAPI = {
     login: async (email, password) => {
         const response = await api.post('/api/auth/login/', { email, password });
-        if (response.data.data && response.data.data.token) {
-            localStorage.setItem('serbisure_token', response.data.data.token);
+        // Handle result (supporting both legacy data and JWT access tokens)
+        const token = response.data.data?.token || response.data.data?.access;
+        if (token) {
+            localStorage.setItem('serbisure_token', token);
         }
         return response.data.data;
     },
