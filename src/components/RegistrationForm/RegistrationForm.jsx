@@ -76,7 +76,7 @@ function StepIndicator({ current, total }) {
     );
 }
 
-function RegistrationForm({ title, subtitle, roles, skills, onRegister, onGoogleComplete, onValidateStart, onValidateEnd }) {
+function RegistrationForm({ title, subtitle, roles, skills, onRegister, onGoogleComplete, onValidateStart, onValidateEnd, pendingGoogleUser, setPendingGoogleUser }) {
     const navigate = useNavigate();
     const [step, setStep] = useState(0);
     const [formData, setFormData] = useState({
@@ -87,7 +87,7 @@ function RegistrationForm({ title, subtitle, roles, skills, onRegister, onGoogle
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
-    const [googleUser, setGoogleUser] = useState(null); // holds Google result before role pick
+    // const [googleUser, setGoogleUser] = useState(null); // REMOVED - Using global prop
     const [googleRole, setGoogleRole] = useState(roles[0]);
     const [googleSkill, setGoogleSkill] = useState(skills[0]);
 
@@ -109,7 +109,7 @@ function RegistrationForm({ title, subtitle, roles, skills, onRegister, onGoogle
             }
 
             // Don't save yet — show role picker first
-            setGoogleUser(result.user);
+            setPendingGoogleUser(result.user);
         } catch (err) {
             console.error("Google Auth Error:", err);
             const googleErrorMessages = {
@@ -133,9 +133,12 @@ function RegistrationForm({ title, subtitle, roles, skills, onRegister, onGoogle
     async function handleGoogleRoleConfirm() {
         setLoading(true);
         setError("");
-        const result = await onGoogleComplete(googleUser, googleRole, googleSkill);
+        const result = await onGoogleComplete(pendingGoogleUser, googleRole, googleSkill);
         if (result && !result.success) {
-            setError("Failed to save your profile. Please try again.");
+            setError(result.error || "Failed to save your profile. Please try again.");
+        } else {
+             // Success - clear pending user
+             setPendingGoogleUser(null);
         }
         setLoading(false);
     }
@@ -173,7 +176,7 @@ function RegistrationForm({ title, subtitle, roles, skills, onRegister, onGoogle
                 "auth/weak-password": "Password must be at least 6 characters.",
                 "auth/invalid-email": "Please enter a valid email address.",
             };
-            setError(msgs[result.error] || "Registration failed. Please try again.");
+            setError(msgs[result.error] || result.error || "Registration failed. Please try again.");
         }
         setLoading(false);
     }
@@ -192,17 +195,17 @@ function RegistrationForm({ title, subtitle, roles, skills, onRegister, onGoogle
     }
 
     // After Google sign-in — show role picker before saving
-    if (googleUser) {
+    if (pendingGoogleUser) {
         return (
             <div className="reg-wrapper">
                 <div className="reg-card">
                     <div className="reg-header">
-                        {googleUser.photoURL && (
-                            <img src={googleUser.photoURL} alt="avatar" className="reg-google-avatar" />
+                        {pendingGoogleUser.photoURL && (
+                            <img src={pendingGoogleUser.photoURL} alt="avatar" className="reg-google-avatar" />
                         )}
                         <h2 className="reg-title">One more step!</h2>
                         <p className="reg-subtitle">
-                            Hi <strong>{googleUser.displayName}</strong>! How will you use SerbiSure?
+                            Hi <strong>{pendingGoogleUser.displayName}</strong>! How will you use SerbiSure?
                         </p>
                     </div>
 
@@ -258,7 +261,7 @@ function RegistrationForm({ title, subtitle, roles, skills, onRegister, onGoogle
                             type="button"
                             className="reg-link"
                             style={{ background: "none", border: "none", cursor: "pointer", padding: 0, font: "inherit" }}
-                            onClick={() => setGoogleUser(null)}
+                            onClick={() => setPendingGoogleUser(null)}
                         >
                             Go back
                         </button>

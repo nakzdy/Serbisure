@@ -5,7 +5,7 @@ import { appName, systemInfo } from "../../data/system";
 import { signInWithGoogle, logoutUser } from "../../firebase/auth";
 import { getUserProfile } from "../../firebase/db";
 
-function Login({ onLogin }) {
+function Login({ onLogin, onGoogleLogin }) {
     const [formData, setFormData] = useState({
         email: "",
         password: "",
@@ -29,16 +29,7 @@ function Login({ onLogin }) {
         const result = await onLogin(formData.email, formData.password, formData.role);
 
         if (!result.success) {
-            // Map Firebase Auth error codes to user-friendly messages
-            const errorMessages = {
-                "auth/invalid-credential": "Invalid email or password.",
-                "auth/user-not-found": "No account found with this email.",
-                "auth/wrong-password": "Incorrect password.",
-                "auth/too-many-requests": "Too many failed attempts. Please try again later.",
-                "auth/invalid-email": "Please enter a valid email address.",
-                "auth/role-mismatch": "This account is not registered for the selected role.",
-            };
-            setError(errorMessages[result.error] || "Login failed. Please try again.");
+            setError(result.error || "Login failed. Please check your credentials.");
         }
         setLoading(false);
     };
@@ -46,27 +37,11 @@ function Login({ onLogin }) {
     const handleGoogleLogin = async () => {
         setError("");
         setLoading(true);
-        try {
-            const result = await signInWithGoogle();
-            const profile = await getUserProfile(result.user.uid);
-            
-            // If they don't have a profile setup, they shouldn't be logging in.
-            if (!profile || !profile.role) {
-                await logoutUser();
-                setError("No account found for this Google email. Please register first.");
-                setLoading(false);
-                return;
-            }
-            // App.jsx will automatically handle the redirection since their profile exists.
-        } catch (err) {
-            console.error("Google Auth Error:", err);
-            if (err.code === "auth/unauthorized-domain") {
-                setError("This domain is not authorized for Google Sign-in. Please add it in Firebase Console.");
-            } else if (err.code !== "auth/popup-closed-by-user" && err.code !== "auth/cancelled-popup-request") {
-                setError("Google sign-in failed. Please try again.");
-            }
-            setLoading(false);
+        const result = await onGoogleLogin();
+        if (result && !result.success) {
+            setError(result.error || "Google sign-in failed. Please try again.");
         }
+        setLoading(false);
     };
 
     return (
@@ -77,7 +52,32 @@ function Login({ onLogin }) {
                     <h2 className="form-title">Login</h2>
                     <p className="form-subtitle">Access your SerbiSure account</p>
 
-                    {error && (
+                    {error === "no-account" ? (
+                        <div style={{
+                            padding: "12px 14px",
+                            borderRadius: "10px",
+                            background: "rgba(99, 140, 255, 0.1)",
+                            border: "1px solid rgba(99, 140, 255, 0.2)",
+                            color: "var(--text)",
+                            fontSize: "13px",
+                            textAlign: "center",
+                            lineHeight: "1.5"
+                        }}>
+                            No SerbiSure account found.<br />
+                            <Link 
+                                to="/register" 
+                                style={{ 
+                                    color: "var(--accent)", 
+                                    fontWeight: "700", 
+                                    textDecoration: "underline",
+                                    display: "inline-block",
+                                    marginTop: "4px"
+                                }}
+                            >
+                                Click here to Register now
+                            </Link>
+                        </div>
+                    ) : error && (
                         <div style={{
                             padding: "10px 14px",
                             borderRadius: "8px",
@@ -85,7 +85,10 @@ function Login({ onLogin }) {
                             border: "1px solid rgba(252, 92, 101, 0.25)",
                             color: "#fc5c65",
                             fontSize: "13px",
-                            fontWeight: 500
+                            fontWeight: 500,
+                            textAlign: "center",
+                            whiteSpace: "pre-line",
+                            lineHeight: "1.4"
                         }}>
                             {error}
                         </div>
