@@ -7,7 +7,7 @@ export const activeRequests = [
         category: "Plumbing",
         priority: "Emergency",
         date: "Today, 2:00 PM",
-        estimatedCost: "$85",
+        estimatedCost: "₱85",
         status: "pending-approval",
         statusLabel: "Pending Approval",
         image: "/pipe_repair.png",
@@ -24,7 +24,7 @@ export const activeRequests = [
         category: "Electrical",
         priority: "Standard",
         date: "Tomorrow, 10:00 AM",
-        estimatedCost: "$120",
+        estimatedCost: "₱120",
         status: "pending-worker",
         statusLabel: "Pending Worker",
         image: "/fixture_installation.png",
@@ -38,7 +38,7 @@ export const activeRequests = [
         category: "Cleaning",
         priority: "Home",
         date: "Oct 24, 9:00 AM",
-        estimatedCost: "$150",
+        estimatedCost: "₱150",
         status: "awaiting-confirmation",
         statusLabel: "Awaiting Confirmation",
         image: "/deep_cleaning.png",
@@ -107,7 +107,7 @@ export const dashboardNotifications = [
 ];
 
 export const workerStats = {
-    totalEarnings: "$2,450",
+    totalEarnings: "₱2,450",
     completedJobs: 42,
     rating: 4.9,
     reliability: "98%",
@@ -122,7 +122,7 @@ export const incomingJobs = [
         priority: "High",
         customer: "Sarah Johnson",
         location: "Quezon City",
-        estimatedPay: "$65",
+        estimatedPay: "₱65",
         time: "Requested 15m ago",
         status: "pending"
     },
@@ -133,7 +133,7 @@ export const incomingJobs = [
         priority: "Medium",
         customer: "Robert Lim",
         location: "Makati City",
-        estimatedPay: "$120",
+        estimatedPay: "₱120",
         time: "Requested 1h ago",
         status: "pending"
     }
