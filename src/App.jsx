@@ -65,19 +65,43 @@ function AppContent() {
         fetchRealServices();
     }, []);
 
-    // Firebase Auth state observer — listens for session changes over HTTPS/TLS
+    // Django Session Persistence: Check for token on mount
+    useEffect(() => {
+        const checkDjangoSession = async () => {
+            const token = localStorage.getItem('serbisure_token');
+            if (token && !isAuthenticated) {
+                try {
+                    const djangoData = await authAPI.getProfile();
+                    const djangoUser = djangoData?.user || djangoData;
+                    
+                    if (djangoUser && djangoUser.email) {
+                        setUser({
+                            uid: djangoUser.id,
+                            name: djangoUser.full_name || djangoUser.email.split('@')[0],
+                            email: djangoUser.email,
+                            role: djangoUser.role === "service_worker" ? "worker" : "homeowner",
+                            isWorkerOnboarded: djangoUser.role === "service_worker",
+                        });
+                        setIsAuthenticated(true);
+                    }
+                } catch (err) {
+                    console.error("Session restoration failed:", err);
+                    localStorage.removeItem('serbisure_token');
+                }
+            }
+            // Ensure these always run to stop the loading screen/white screen
+            setAuthLoading(false);
+            setIsAppInitializing(false);
+        };
+        
+        checkDjangoSession();
+    }, []);
+
+    // Firebase Auth state observer — Only used for Google Login now
     useEffect(() => {
         const unsubscribe = onAuthChange(async (firebaseUser) => {
-            // ONLY auto-authenticate if we aren't in the middle of a manual login validation
-            if (firebaseUser && !isValidatingRole) {
-                // Remove setAuthLoading(true) to avoid full-page unmount during checks
-                
-                // 1. Fetch legacy profile if it exists
-                const profile = await getUserProfile(firebaseUser.uid);
-                let finalRole = null;
-                let djangoUser = null;
-
-                // 2. ALWAYS verify/sync with Django Backend (Source of Truth)
+            // ONLY handle Google users here
+            if (firebaseUser && firebaseUser.providerData[0]?.providerId === 'google.com' && !isValidatingRole) {
                 try {
                     const djangoData = await authAPI.googleSync({
                         email: firebaseUser.email,
@@ -85,54 +109,22 @@ function AppContent() {
                         full_name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
                     });
 
-                    djangoUser = djangoData.user;
-                    if (djangoUser && (djangoUser.role === "service_worker" || djangoUser.role === "homeowner")) {
-                        finalRole = djangoUser.role === "service_worker" ? "worker" : "homeowner";
+                    const djangoUser = djangoData?.user || djangoData;
+                    if (djangoUser) {
+                        setIsAuthenticated(true);
+                        setUser(prev => ({
+                            ...prev,
+                            uid: djangoUser.id,
+                            name: djangoUser.full_name,
+                            email: djangoUser.email,
+                            role: djangoUser.role === "service_worker" ? "worker" : "homeowner",
+                            isWorkerOnboarded: djangoUser.role === "service_worker",
+                        }));
                     }
                 } catch (err) {
-                    if (err.response?.status === 404) {
-                        console.log("Django account missing.");
-                    } else {
-                        console.error("Django sync failed:", err.message);
-                    }
+                    console.error("Google sync failed:", err.message);
                 }
-
-                // 3. Final Check: If Django doesn't know the role, we MUST select it
-                if (!finalRole) {
-                    // Only auto-trigger setup if we aren't in a middle of a manual validation check
-                    if (!isValidatingRole) {
-                        console.log("No valid Django role found. Forcing role setup.");
-                        setPendingGoogleUser(firebaseUser); 
-                        setNeedsRoleSetup(true);
-                    }
-                    setAuthLoading(false);
-                    setIsAppInitializing(false); // First check done
-                    return;
-                }
-
-                // 4. Success — Update Global State
-                setNeedsRoleSetup(false);
-                setIsAuthenticated(true);
-                setUser(prev => ({
-                    ...prev,
-                    uid: djangoUser?.id || firebaseUser.uid,
-                    name: djangoUser?.full_name || firebaseUser.displayName || firebaseUser.email.split('@')[0],
-                    email: firebaseUser.email,
-                    role: finalRole,
-                    skills: profile?.skills || prev.skills || "",
-                    isWorkerOnboarded: finalRole === "worker",
-                    ...profile
-                }));
-            } else if (!firebaseUser) {
-                // User is signed out
-                setNeedsRoleSetup(false);
-                setIsAuthenticated(false);
-                setUser({ name: "", email: "", role: "", about: "", skills: "", location: "", isWorkerOnboarded: false });
             }
-            
-            // Finish ALL loading states on first run
-            setAuthLoading(false);
-            setIsAppInitializing(false);
         });
         return () => unsubscribe();
     }, [isValidatingRole]);
@@ -141,33 +133,32 @@ function AppContent() {
         setNotifications((prev) => [...prev, { id: Date.now(), message }]);
     };
 
-    // Integrated Auth: Django Login + Token Persistence
+    // Integrated Auth: RELIES ON DJANGO TOKEN (Bypasses Firebase for standard users)
     const handleLogin = async (email, password, role) => {
         setIsValidatingRole(true);
         try {
-            // 1. Authenticate with Django Backend
+            // 1. Authenticate with Django Backend (Single Source of Truth)
             const djangoData = await authAPI.login(email, password);
+            const djangoUser = djangoData?.user || djangoData;
 
-            // 2. Authenticate with Firebase (to keep the Session Observer happy)
-            await loginUser(email, password);
+            if (!djangoUser) throw new Error("Invalid response from server");
 
-            // 3. Validate Role if provided
+            // 2. Validate Role if provided
             const isWorkerSelection = role === "Service Worker";
-            const actualRole = djangoData.user.role; // "service_worker" or "homeowner"
+            const actualRole = djangoUser.role; // "service_worker" or "homeowner"
             const expectedRole = isWorkerSelection ? "service_worker" : "homeowner";
 
-            if (actualRole !== expectedRole) {
+            if (role && actualRole !== expectedRole) {
                 authAPI.logout();
-                await logoutUser(); // Log out from Firebase too if role mismatch
                 setIsValidatingRole(false);
                 return { success: false, error: "auth/role-mismatch" };
             }
 
-            // 4. Update Global State
+            // 3. Update Global State
             setUser({
-                uid: djangoData.user.id,
-                name: djangoData.user.full_name || djangoData.user.email.split('@')[0],
-                email: djangoData.user.email,
+                uid: djangoUser.id,
+                name: djangoUser.full_name || djangoUser.email.split('@')[0],
+                email: djangoUser.email,
                 role: actualRole === "service_worker" ? "worker" : "homeowner",
                 isWorkerOnboarded: actualRole === "service_worker",
             });
@@ -180,7 +171,7 @@ function AppContent() {
         } catch (error) {
             setIsValidatingRole(false);
             console.error("Manual Login Error:", error);
-            const errorMsg = error.response?.data?.message || error.code || "Login failed. Please check your credentials.";
+            const errorMsg = error.response?.data?.message || "Login failed. Please check your credentials.";
             return { success: false, error: errorMsg };
         }
     };

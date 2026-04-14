@@ -1,42 +1,50 @@
 import { useState, useEffect, useMemo } from "react";
-import { workerStats, incomingRequests, activeJobs, reviews } from "../../data/workerDashboard";
+import { bookingsAPI } from "../../api/api";
+import { workerStats, reviews } from "../../data/workerDashboard";
 import "./WorkerDashboard.css";
 
 function WorkerDashboardPage({ user }) {
     const [isOnline, setIsOnline] = useState(true);
-    const [requests, setRequests] = useState(incomingRequests);
+    const [requests, setRequests] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    // Filter requests when user skills change (onboarding complete)
+    // Fetch real bookings from Django on mount
     useEffect(() => {
-        const skillsString = user?.skills || "";
-        const profileSkills = user?.workerProfile?.skills || [];
-        const allSkills = [...new Set([...profileSkills, ...skillsString.split(",").map(s => s.trim()).filter(Boolean)])];
+        const fetchWorkerData = async () => {
+            setLoading(true);
+            try {
+                const data = await bookingsAPI.getBookings();
+                const safeData = Array.isArray(data) ? data : (data?.results || []);
+                
+                // Map Django Booking model to UI
+                const mappedRequests = safeData.map(b => ({
+                    id: b.id,
+                    title: b.service_details?.name || "Service Request",
+                    category: b.service_details?.category || "General",
+                    date: new Date(b.scheduled_date).toLocaleDateString(),
+                    priority: "High",
+                    distance: "2.5 km away",
+                    status: b.status,
+                    homeowner: {
+                        name: b.homeowner_details?.full_name || "Client",
+                        location: "Davao City",
+                        avatar: "fa-solid fa-house-user"
+                    }
+                }));
+                setRequests(mappedRequests);
+            } catch (err) {
+                console.error("Worker dashboard fetch failed:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchWorkerData();
+    }, [user.uid]);
 
-        if (user?.isWorkerOnboarded && allSkills.length > 0) {
-            setRequests(incomingRequests.filter(req =>
-                allSkills.some(s => s.toLowerCase() === req.category.toLowerCase())
-            ));
-        } else {
-            setRequests(incomingRequests);
-        }
-    }, [user?.skills, user?.workerProfile?.skills, user?.isWorkerOnboarded]);
-
-    const filteredActiveJobs = useMemo(() => {
-        const skillsString = user?.skills || "";
-        const profileSkills = user?.workerProfile?.skills || [];
-        const allSkills = [...new Set([...profileSkills, ...skillsString.split(",").map(s => s.trim()).filter(Boolean)])];
-
-        if (user?.isWorkerOnboarded && allSkills.length > 0) {
-            return activeJobs.filter(job =>
-                allSkills.some(s => s.toLowerCase() === job.category.toLowerCase())
-            );
-        }
-        return activeJobs;
-    }, [user?.skills, user?.workerProfile?.skills, user?.isWorkerOnboarded]);
-
-    const handleAccept = (id) => {
+    const handleAccept = async (id) => {
+        // In a real app, this would PATCH the status to 'confirmed'
+        alert("Accepting Job...");
         setRequests(prev => prev.filter(r => r.id !== id));
-        // In a real app, this would move it to active jobs
     };
 
     const handleDecline = (id) => {
@@ -142,23 +150,22 @@ function WorkerDashboardPage({ user }) {
 
                     <div className="worker-section" style={{ opacity: 0.8 }}>
                         <div className="worker-section-header">
-                            <h2>Active Jobs ({filteredActiveJobs.length})</h2>
+                            <h2>Active Jobs ({requests.filter(r => r.status === 'confirmed').length})</h2>
                         </div>
                         <div className="requests-grid">
-                            {filteredActiveJobs.length > 0 ? (
-                                filteredActiveJobs.map(job => (
+                            {requests.filter(r => r.status === 'confirmed').length > 0 ? (
+                                requests.filter(r => r.status === 'confirmed').map(job => (
                                     <div className="worker-request-card" key={job.id} style={{ borderLeft: "4px solid #f39c12" }}>
                                         <div className="req-header">
                                             <div className="req-title-area">
                                                 <span className="req-category">{job.category}</span>
                                                 <h3 style={{ marginTop: "8px" }}>{job.title}</h3>
                                             </div>
-
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <p style={{ color: "var(--text-muted)", fontSize: "14px", margin: 0, gridColumn: "1 / -1" }}>No active jobs in your current skill set.</p>
+                                <p style={{ color: "var(--text-muted)", fontSize: "14px", margin: 0, gridColumn: "1 / -1" }}>No active jobs found in the system.</p>
                             )}
                         </div>
                     </div>

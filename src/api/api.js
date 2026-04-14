@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://serbisure-backend.vercel.app';
+// Detect environment to switch between localhost and production
+const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://127.0.0.1:8000'
+    : 'https://serbisurebackend.vercel.app';
 
 // Centralized API instance
 const api = axios.create({
@@ -10,28 +13,30 @@ const api = axios.create({
     },
 });
 
-// Automatically attach Bearer Token to requests if it exists in localStorage
+// Automatically attach Token to requests (Django Token Auth)
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('serbisure_token');
     if (token) {
-        config.headers.Authorization = `Bearer ${token}`; // Module 3: Use Bearer for JWT
+        config.headers.Authorization = `Token ${token}`;
     }
     return config;
 });
 
+// Helper to unwrap standard { status: "success", data: ... } response
+const unwrap = (response) => response.data.data || response.data;
+
 export const authAPI = {
     login: async (email, password) => {
-        const response = await api.post('/api/auth/login/', { email, password });
-        // Handle result (supporting both legacy data and JWT access tokens)
-        const token = response.data.data?.token || response.data.data?.access;
+        const response = await api.post('/api/v1/auth/login/', { email, password });
+        const token = response.data.data?.token;
         if (token) {
             localStorage.setItem('serbisure_token', token);
         }
         return response.data.data;
     },
     register: async (userData) => {
-        const response = await api.post('/api/auth/register/', userData);
-        if (response.data.data.token) {
+        const response = await api.post('/api/v1/auth/register/', userData);
+        if (response.data.data?.token) {
             localStorage.setItem('serbisure_token', response.data.data.token);
         }
         return response.data.data;
@@ -40,30 +45,39 @@ export const authAPI = {
         localStorage.removeItem('serbisure_token');
     },
     googleSync: async (userData) => {
-        const response = await api.post('/api/auth/google-sync/', userData);
-        if (response.data.data.token) {
+        const response = await api.post('/api/v1/auth/google-sync/', userData);
+        if (response.data.data?.token) {
             localStorage.setItem('serbisure_token', response.data.data.token);
         }
         return response.data.data;
+    },
+    getProfile: async () => {
+        const response = await api.get('/api/v1/profile/');
+        return unwrap(response);
     }
 };
 
 export const servicesAPI = {
     getServices: async () => {
-        const response = await api.get('/api/services/');
-        return response.data;
+        const response = await api.get('/api/v1/services/');
+        // Return results for pagination support, fallback to data wrapper
+        return response.data.results || response.data.data || response.data;
     },
 };
 
 export const bookingsAPI = {
     getBookings: async () => {
-        const response = await api.get('/api/bookings/');
-        return response.data;
+        const response = await api.get('/api/v1/bookings/');
+        return response.data.results || response.data.data || response.data;
     },
     createBooking: async (bookingData) => {
-        const response = await api.post('/api/bookings/', bookingData);
-        return response.data;
+        const response = await api.post('/api/v1/bookings/', bookingData);
+        return unwrap(response);
     },
+    deleteBooking: async (id) => {
+        const response = await api.delete(`/api/v1/bookings/${id}/`);
+        return response.data;
+    }
 };
 
 export default api;
