@@ -3,7 +3,7 @@ import axios from 'axios';
 // Detect environment to switch between localhost and production
 const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://127.0.0.1:8000'
-    : 'https://serbisurebackend.vercel.app';
+    : 'https://serbisure-backend.vercel.app';
 
 // Centralized API instance
 const api = axios.create({
