@@ -1,69 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { bookingsAPI } from "../../api/api";
 
 function HistoryPage({ user }) {
     const [filterStatus, setFilterStatus] = useState("all");
+    const [serviceHistory, setServiceHistory] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    // Mock service history data
-    const [serviceHistory] = useState([
-        {
-            id: 1,
-            title: "Kitchen Pipe Repair",
-            category: "Plumbing",
-            workerName: "Marcus J.",
-            date: "Feb 20, 2026",
-            status: "completed",
-            rating: 5,
-        },
-        {
-            id: 10,
-            title: "Wooden Deck Repair",
-            category: "Carpentry",
-            workerName: "You",
-            date: "Mar 01, 2026",
-            status: "completed",
-            rating: 5,
-        },
-        {
-            id: 2,
-            title: "Living Room Rewiring",
-            category: "Electrical",
-            workerName: "Mario Rossi",
-            date: "Feb 15, 2026",
-
-            status: "completed",
-            rating: 4,
-        },
-        {
-            id: 3,
-            title: "Bathroom Deep Clean",
-            category: "Cleaning",
-            workerName: "Maria Clara",
-            date: "Feb 10, 2026",
-
-            status: "completed",
-            rating: 5,
-        },
-        {
-            id: 4,
-            title: "Fixture Installation",
-            category: "Electrical",
-            workerName: "Juana Dela Cruz",
-            date: "Feb 5, 2026",
-
-            status: "cancelled",
-            rating: null,
-        },
-        {
-            id: 5,
-            title: "Drain Unclogging",
-            category: "Plumbing",
-            workerName: "Marcus J.",
-            date: "Jan 28, 2026",
-
-            status: "completed",
-            rating: 4,
-        },
-    ]);
+    // Fetch real bookings from Django on mount
+    useEffect(() => {
+        const fetchHistory = async () => {
+            setLoading(true);
+            try {
+                const data = await bookingsAPI.getBookings();
+                const safeData = Array.isArray(data) ? data : (data?.results || []);
+                
+                // Map Django Booking model to UI structure
+                const mappedHistory = safeData.map(booking => ({
+                    id: booking.id,
+                    title: booking.service_details?.name || "Service Booking",
+                    category: booking.service_details?.category || "General",
+                    workerName: booking.service_details?.provider_name || "Assigned Worker",
+                    date: new Date(booking.scheduled_date).toLocaleDateString(undefined, {
+                        year: 'numeric', month: 'short', day: 'numeric'
+                    }),
+                    status: booking.status,
+                    rating: null, // Ratings not yet implemented in backend
+                }));
+                setServiceHistory(mappedHistory);
+            } catch (err) {
+                console.error("Failed to fetch history:", err);
+                setError("Could not load your history. Please try again later.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchHistory();
+    }, [user.uid]);
 
     const filteredHistory = serviceHistory
         .filter(h => {

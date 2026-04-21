@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { activeRequests as initialRequests, topRatedWorkers, dashboardNotifications } from "../../data/dashboard";
+import { servicesAPI, bookingsAPI } from "../../api/api";
+import { dashboardNotifications } from "../../data/dashboard";
 import "./Dashboard.css";
 import "./ActiveRequests.css";
 import "./Sidebar.css";
@@ -8,7 +9,9 @@ import "./Sidebar.css";
 function HomeownerDashboardPage({ user }) {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState("pending");
-    const [requests, setRequests] = useState(initialRequests);
+    const [requests, setRequests] = useState([]);
+    const [topWorkers, setTopWorkers] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [messageRequest, setMessageRequest] = useState(null);
     const [messageText, setMessageText] = useState("");
@@ -16,35 +19,92 @@ function HomeownerDashboardPage({ user }) {
     const [filterOpen, setFilterOpen] = useState(false);
     const [minRating, setMinRating] = useState(0);
 
-    const filteredRequests = activeTab === "pending"
-        ? requests.filter(r => r.status !== "confirmed")
-        : requests.filter(r => r.status === "confirmed");
+    const filterOptions = [
+        { label: "All Workers", value: 0 },
+        { label: "4.8+ Stars", value: 4.8 },
+        { label: "4.5+ Stars", value: 4.5 },
+        { label: "4.0+ Stars", value: 4.0 }
+    ];
 
-    // Cancel a searching request
-    const handleCancelRequest = (id) => {
-        setRequests(prev => prev.filter(r => r.id !== id));
-    };
-
-    // Send a message to a worker
     const handleSendMessage = (e) => {
         e.preventDefault();
         setMessageSent(true);
-        setMessageText("");
         setTimeout(() => {
-            setMessageSent(false);
             setMessageRequest(null);
-        }, 2000);
+            setMessageSent(false);
+            setMessageText("");
+        }, 3000);
     };
 
-    // Filter workers by rating
-    const filteredTopWorkers = topRatedWorkers.filter(w => w.rating >= minRating);
 
-    const filterOptions = [
-        { label: "All Workers", value: 0 },
-        { label: "4.0+ Stars", value: 4.0 },
-        { label: "4.5+ Stars", value: 4.5 },
-        { label: "5.0 Stars", value: 5.0 },
-    ];
+    // Fetch live data on mount
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            setLoading(true);
+            try {
+                // 1. Fetch live bookings
+                const bookingsData = await bookingsAPI.getBookings();
+                const safeBookingsData = Array.isArray(bookingsData) ? bookingsData : (bookingsData?.results || []);
+                
+                const mappedRequests = safeBookingsData.map(b => ({
+                    id: b.id,
+                    title: b.service_details?.name || "Service Request",
+                    category: b.service_details?.category || "General",
+                    priority: "Normal", // Backend doesn't have priority yet
+                    date: new Date(b.scheduled_date).toLocaleDateString(),
+                    estimatedCost: `${b.service_details?.price || 0}`,
+                    status: b.status,
+                    statusLabel: b.status.charAt(0).toUpperCase() + b.status.slice(1),
+                    image: `https://placehold.co/200x200/6c5ce7/ffffff?text=${b.service_details?.category?.charAt(0) || 'S'}`, // Reliable text placeholder
+                    worker: b.service_details?.provider ? {
+                        name: b.service_details.provider.full_name,
+                        rating: 4.8,
+                        reviews: 12,
+                        avatar: "fa-solid fa-user-gear"
+                    } : null,
+                    searching: b.status === "pending",
+                    searchingText: "Waiting for confirmation..."
+                }));
+                setRequests(mappedRequests);
+
+                // 2. Fetch live services for the sidebar
+                const servicesData = await servicesAPI.getServices();
+                const safeServicesData = Array.isArray(servicesData) ? servicesData : (servicesData?.results || []);
+                
+                const mappedWorkers = safeServicesData.slice(0, 5).map(s => ({
+                    id: s.id,
+                    name: s.provider_details?.full_name || s.name,
+                    specialty: s.category,
+                    rating: 4.9,
+                    reliability: "98% Reliable",
+                    avatar: "fa-solid fa-user-tie",
+                    verified: true
+                }));
+                setTopWorkers(mappedWorkers);
+            } catch (err) {
+                console.error("Dashboard fetch failed:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchDashboardData();
+    }, [user.uid]);
+
+    const filteredRequests = activeTab === "pending"
+        ? requests.filter(r => r.status === "pending")
+        : requests.filter(r => r.status === "confirmed" || r.status === "completed");
+
+    // Live Delete: Cancel a request in the backend
+    const handleCancelRequest = async (id) => {
+        if (window.confirm("Are you sure you want to cancel this request?")) {
+            try {
+                await bookingsAPI.deleteBooking(id);
+                setRequests(prev => prev.filter(r => r.id !== id));
+            } catch (err) {
+                alert("Failed to cancel request. Please try again.");
+            }
+        }
+    };
 
     return (
         <div className="dashboard-page">
@@ -227,7 +287,7 @@ function HomeownerDashboardPage({ user }) {
                         <button className="view-all" onClick={() => navigate("/feedback")}>View All</button>
                     </div>
                     <div className="top-rated-list">
-                        {filteredTopWorkers.map(worker => (
+                        {topWorkers.filter(w => w.rating >= minRating).map(worker => (
                             <div className="top-rated-item" key={worker.id}>
                                 <div className="top-rated-avatar">
                                     <span style={{
@@ -261,7 +321,7 @@ function HomeownerDashboardPage({ user }) {
                                 </div>
                             </div>
                         ))}
-                        {filteredTopWorkers.length === 0 && (
+                        {topWorkers.filter(w => w.rating >= minRating).length === 0 && (
                             <div style={{ textAlign: "center", padding: "20px", color: "var(--text-muted)", fontSize: "13px" }}>
                                 No workers match this rating filter.
                             </div>
