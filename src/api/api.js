@@ -22,6 +22,22 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+// Automatically handle unauthorized responses (401/403)
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+            console.warn("Unauthorized access detected. Clearing session...");
+            localStorage.removeItem('serbisure_token');
+            // Redirect to login if not already there
+            if (window.location.pathname !== '/login') {
+                window.location.href = "/login";
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 // Helper to unwrap standard { status: "success", data: ... } response
 const unwrap = (response) => response.data.data || response.data;
 

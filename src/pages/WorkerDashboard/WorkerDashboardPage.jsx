@@ -97,7 +97,7 @@ function WorkerDashboardPage({ user }) {
     const handleDecline = async (id) => {
         if (!window.confirm("Are you sure you want to decline this request?")) return;
         try {
-            await bookingsAPI.deleteBooking(id);
+            await bookingsAPI.updateBooking(id, { status: 'cancelled' });
             fetchWorkerData();
         } catch (err) {
             console.error("Failed to decline:", err);

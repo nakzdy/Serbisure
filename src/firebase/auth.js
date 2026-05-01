@@ -15,7 +15,8 @@ import {
     updateProfile,
     onAuthStateChanged,
     GoogleAuthProvider,
-    signInWithPopup
+    signInWithPopup,
+    deleteUser
 } from "firebase/auth";
 import { auth } from "./config";
 
@@ -71,6 +72,13 @@ export async function loginUser(email, password) {
  */
 export async function logoutUser() {
     return await signOut(auth);
+}
+
+/**
+ * Delete a user from Firebase.
+ */
+export async function deleteFirebaseUser(user) {
+    return await deleteUser(user);
 }
 
 /**

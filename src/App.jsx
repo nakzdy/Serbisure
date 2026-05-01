@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { registerUser, loginUser, logoutUser, onAuthChange, signInWithGoogle } from "./firebase/auth";
+import { registerUser, loginUser, logoutUser, onAuthChange, signInWithGoogle, deleteFirebaseUser } from "./firebase/auth";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import "./styles/App.css";
 import Registration from "./pages/Registration/Registration";
@@ -36,18 +36,17 @@ function AppContent() {
     const [workers, setWorkers] = useState([]); // Will play real data from Django
     const [loadingWorkers, setLoadingWorkers] = useState(true);
 
-    // Mock initial bookings
-    const [bookings, setBookings] = useState([
-        { id: 1, workerName: "Juana Dela Cruz", serviceType: "Plumbing", status: "pending" },
-    ]);
+    // Mock initial bookings (now empty for testing)
+    const [bookings, setBookings] = useState([]);
 
     // Fetch real workers/services from Django on mount
     useEffect(() => {
         const fetchRealServices = async () => {
             try {
                 const data = await servicesAPI.getServices();
+                const safeData = Array.isArray(data) ? data : (data?.results || data?.data || []);
                 // Map Django service model to frontend worker model
-                const mappedWorkers = data.map(service => ({
+                const mappedWorkers = safeData.map(service => ({
                     id: service.id,
                     serviceName: service.name,
                     providerName: service.provider?.full_name || "Verified Worker",
@@ -65,7 +64,7 @@ function AppContent() {
             }
         };
         fetchRealServices();
-    }, []);
+    }, [isAuthenticated]);
 
     // Django Session Persistence: Check for token on mount
     useEffect(() => {
@@ -138,9 +137,43 @@ function AppContent() {
     // Integrated Auth: RELIES ON DJANGO TOKEN (Bypasses Firebase for standard users)
     const handleLogin = async (email, password, role) => {
         setIsValidatingRole(true);
+        let djangoData;
         try {
             // 1. Authenticate with Django Backend (Single Source of Truth)
-            const djangoData = await authAPI.login(email, password);
+            djangoData = await authAPI.login(email, password);
+        } catch (error) {
+            console.warn("Django login failed. Attempting to recover stranded Firebase account...");
+            try {
+                const firebaseUser = await loginUser(email, password);
+                if (firebaseUser) {
+                    console.warn("Stranded account found in Firebase! Auto-syncing to Neon DB...");
+                    const profile = await getUserProfile(firebaseUser.user.uid);
+                    
+                    const expectedRole = role === "Service Worker" ? "service_worker" : "homeowner";
+                    const fallbackRole = profile?.role === "worker" ? "service_worker" : expectedRole;
+                    const fallbackName = profile?.name || firebaseUser.user.displayName || email.split('@')[0];
+
+                    await authAPI.register({
+                        email,
+                        password,
+                        full_name: fallbackName,
+                        role: fallbackRole
+                    });
+                    
+                    // Re-attempt Django login
+                    djangoData = await authAPI.login(email, password);
+                } else {
+                    throw error;
+                }
+            } catch (recoveryErr) {
+                setIsValidatingRole(false);
+                console.error("Manual Login Error:", error);
+                const errorMsg = error.response?.data?.message || "Login failed. Please check your credentials.";
+                return { success: false, error: errorMsg };
+            }
+        }
+
+        try {
             const djangoUser = djangoData?.user || djangoData;
 
             if (!djangoUser) throw new Error("Invalid response from server");
@@ -296,16 +329,22 @@ function AppContent() {
             const isWorker = role === "Service Worker";
             const djangoRole = isWorker ? "service_worker" : "homeowner";
 
-            // 1. Register with Django Backend (Primary Data Source)
-            await authAPI.register({
-                email,
-                password,
-                full_name: name,
-                role: djangoRole
-            });
-
-            // 2. Register with Firebase (For OAuth & Legacy Support)
+            // 1. Register with Firebase FIRST (For OAuth & Legacy Support)
             const userCredential = await registerUser(email, password, name);
+
+            // 2. Register with Django Backend (Primary Data Source)
+            try {
+                await authAPI.register({
+                    email,
+                    password,
+                    full_name: name,
+                    role: djangoRole
+                });
+            } catch (djangoErr) {
+                console.warn("Backend registration failed. Rolling back Firebase user...");
+                await deleteFirebaseUser(userCredential.user);
+                throw djangoErr;
+            }
 
             const profileData = {
                 role: isWorker ? "worker" : "homeowner",
@@ -317,11 +356,12 @@ function AppContent() {
             // 3. Save to Firestore
             await setUserProfile(userCredential.user.uid, profileData);
 
-            setUser(prev => ({
-                ...prev,
+            setUser({
                 uid: userCredential.user.uid,
+                name: name || email.split('@')[0],
+                email: email,
                 ...profileData
-            }));
+            });
 
             setIsAuthenticated(true);
             addNotification(`Welcome to SerbiSure, ${name}!`);
@@ -349,6 +389,7 @@ function AppContent() {
             authAPI.logout();
             await logoutUser(); // Clear Firebase too if used
             setIsAuthenticated(false);
+            setUser({ name: "", email: "", role: "", about: "", skills: "", location: "", isWorkerOnboarded: false });
             navigate("/login");
         } catch (error) {
             console.error("Logout error:", error);

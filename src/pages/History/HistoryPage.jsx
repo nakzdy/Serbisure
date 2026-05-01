@@ -38,27 +38,7 @@ function HistoryPage({ user }) {
         fetchHistory();
     }, [user.uid]);
 
-    const filteredHistory = serviceHistory
-        .filter(h => {
-            const matchesStatus = filterStatus === "all" || h.status === filterStatus;
-
-            // Skill filtering for workers
-            if (user?.role === "worker") {
-                const skillsString = user?.skills || "";
-                const profileSkills = user?.workerProfile?.skills || [];
-                const allSkills = [...new Set([...profileSkills, ...skillsString.split(",").map(s => s.trim()).filter(Boolean)])];
-
-                // If they have explicitly onboarded, only show their skills
-                if (user.isWorkerOnboarded && allSkills.length > 0) {
-                    return matchesStatus && allSkills.some(s => s.toLowerCase() === h.category.toLowerCase());
-                }
-
-                // If they haven't onboarded yet, show everything (new worker view)
-                return matchesStatus;
-            }
-
-            return matchesStatus;
-        });
+    const filteredHistory = serviceHistory.filter(h => filterStatus === "all" || h.status === filterStatus);
 
     const getStatusStyle = (status) => {
         switch (status) {
