@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
 import { bookingsAPI, servicesAPI } from "../../api/api";
-import { workerStats, reviews } from "../../data/workerDashboard";
+import { workerStats as mockStats, incomingRequests as mockRequests, reviews as mockReviews, activeJobs as mockActiveJobs } from "../../data/workerDashboard";
 import "./WorkerDashboard.css";
 
-function WorkerDashboardPage({ user }) {
+const emptyStats = { profileViews: 0, rating: 0.0, jobsCompleted: 0, responseRate: "0%" };
+
+function WorkerDashboardPage({ user, settings }) {
+    const showMock = settings?.showMockData || false;
+    const mockStatusOpen = settings?.mockStatusOpen || false;
     const [isOnline, setIsOnline] = useState(true);
     const [requests, setRequests] = useState([]);
     const [myServices, setMyServices] = useState([]);
     const [recentReviews, setRecentReviews] = useState([]);
-    const [stats, setStats] = useState(workerStats);
+    const [stats, setStats] = useState(emptyStats);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newService, setNewService] = useState({
@@ -73,6 +77,16 @@ function WorkerDashboardPage({ user }) {
         fetchWorkerData();
     }, [user.uid]);
 
+    // Resolve which data set to show based on mock toggle
+    const displayStats = showMock ? mockStats : stats;
+    const displayRequests = showMock
+        ? [...mockRequests, ...mockActiveJobs].map(r => ({
+            ...r,
+            status: mockStatusOpen ? "pending" : r.status
+        }))
+        : requests;
+    const displayReviews = showMock ? mockReviews : recentReviews;
+
     const handleAccept = async (id) => {
         try {
             await bookingsAPI.updateBooking(id, { status: 'confirmed' });
@@ -128,219 +142,353 @@ function WorkerDashboardPage({ user }) {
         }
     };
 
+    // Rating breakdown helper
+    const getRatingBreakdown = () => {
+        const breakdown = [0, 0, 0, 0, 0]; // 1★ to 5★
+        displayReviews.forEach(r => {
+            if (r.rating >= 1 && r.rating <= 5) {
+                breakdown[r.rating - 1]++;
+            }
+        });
+        return breakdown;
+    };
+
+    const ratingBreakdown = getRatingBreakdown();
+    const totalReviews = displayReviews.length;
+
     return (
         <div className="worker-dashboard-page">
-            {/* Header */}
-            <div className="worker-header">
-                <div className="worker-welcome">
-                    <h1>Hello, {user?.name || "Service Worker"}!</h1>
-                    <p>Here's what's happening today.</p>
+
+            {/* ─── Tip Banner ─── */}
+            {myServices.length === 0 && (
+                <div className="tip-banner">
+                    <span className="tip-banner-icon">
+                        <i className="fa-solid fa-circle-info"></i>
+                    </span>
+                    <p className="tip-banner-text">
+                        <strong>Get started:</strong> Post your first service to start receiving booking requests from clients.
+                    </p>
                 </div>
-                <div className="worker-toggle">
-                    <span className="toggle-label">{isOnline ? "Online & Available" : "Offline"}</span>
-                    <label className="switch">
-                        <input type="checkbox" checked={isOnline} onChange={(e) => setIsOnline(e.target.checked)} />
-                        <span className="slider"></span>
+            )}
+
+            {/* ─── Welcome Card ─── */}
+            <div className="worker-welcome-card">
+                <div>
+                    <h2>Hello, {user?.name || "Service Worker"}!</h2>
+                    <p>Here's a summary of your account today.</p>
+                </div>
+                <div className="worker-status-row">
+                    <span className={`worker-status-label ${!isOnline ? "offline" : ""}`}>
+                        <span className={`dot-pulse ${!isOnline ? "offline" : ""}`}></span>
+                        {isOnline ? "Online & Available" : "Offline"}
+                    </span>
+                    <label className="sw-toggle" title="Toggle availability">
+                        <input
+                            type="checkbox"
+                            checked={isOnline}
+                            onChange={(e) => setIsOnline(e.target.checked)}
+                        />
+                        <span className="sw-track"></span>
+                        <span className="sw-thumb"></span>
                     </label>
                 </div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="worker-stats">
-                <div className="stat-card">
-                    <div className="stat-info">
-                        <h4>Profile Views</h4>
-                        <div className="stat-value">{stats.profileViews}</div>
+            {/* ─── Stats Grid ─── */}
+            <div className="worker-stats-grid">
+                <div className="worker-stat-card">
+                    <div className="stat-icon-badge views">
+                        <i className="fa-regular fa-eye"></i>
                     </div>
+                    <div className="stat-number">{displayStats.profileViews}</div>
+                    <div className="stat-label">Profile Views</div>
                 </div>
-                <div className="stat-card">
-                    <div className="stat-info">
-                        <h4>Rating</h4>
-                        <div className="stat-value">{stats.rating} <span style={{ fontSize: "14px", fontWeight: "normal" }}>/ 5.0</span></div>
+                <div className="worker-stat-card">
+                    <div className="stat-icon-badge rating">
+                        <i className="fa-solid fa-star"></i>
                     </div>
+                    <div className="stat-number">
+                        {displayStats.rating.toFixed ? displayStats.rating.toFixed(1) : displayStats.rating}
+                        <span className="stat-number-sub"> / 5.0</span>
+                    </div>
+                    <div className="stat-label">Rating</div>
                 </div>
-                <div className="stat-card">
-                    <div className="stat-info">
-                        <h4>Jobs Done</h4>
-                        <div className="stat-value">{stats.jobsCompleted}</div>
+                <div className="worker-stat-card">
+                    <div className="stat-icon-badge jobs">
+                        <i className="fa-solid fa-check"></i>
                     </div>
+                    <div className="stat-number">{displayStats.jobsCompleted}</div>
+                    <div className="stat-label">Jobs Done</div>
                 </div>
-                <div className="stat-card">
-                    <div className="stat-info">
-                        <h4>Response</h4>
-                        <div className="stat-value">{stats.responseRate}</div>
+                <div className="worker-stat-card">
+                    <div className="stat-icon-badge response">
+                        <i className="fa-solid fa-bolt"></i>
                     </div>
+                    <div className="stat-number">{displayStats.responseRate}</div>
+                    <div className="stat-label">Response Rate</div>
                 </div>
             </div>
 
-            {/* Main Content Area */}
-            <div className="worker-content">
-                {/* Left Side: Requests & Jobs */}
-                <div className="worker-main">
-                    
-                    {/* MY SERVICES SECTION */}
-                    <div className="worker-section">
-                        <div className="worker-section-header">
-                            <h2>My Services ({myServices.length})</h2>
-                            <button className="btn-accept" onClick={() => setIsModalOpen(true)}>+ Post New Service</button>
+            {/* ─── Main Two-Column Grid ─── */}
+            <div className="worker-main-grid">
+
+                {/* ─── LEFT COLUMN ─── */}
+                <div className="worker-left-col">
+
+                    {/* My Services */}
+                    <div className="worker-section-card">
+                        <div className="section-header">
+                            <div className="section-header-left">
+                                <span className="section-header-icon"><i className="fa-solid fa-briefcase"></i></span>
+                                <span className="section-header-title">My Services</span>
+                                <span className="section-badge">{myServices.length}</span>
+                            </div>
+                            <button className="btn-primary-sm" onClick={() => setIsModalOpen(true)}>
+                                <i className="fa-solid fa-plus" style={{ fontSize: "11px" }}></i>
+                                Post New Service
+                            </button>
                         </div>
-                        <div className="requests-grid">
-                            {myServices.length === 0 ? (
-                                <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>You haven't posted any services yet.</p>
-                            ) : (
-                                myServices.map(service => (
-                                    <div className="worker-request-card" key={service.id}>
-                                        <div className="req-header">
-                                            <div className="req-title-area">
-                                                <span className="req-category">{service.category}</span>
-                                                <h3 style={{ marginTop: "8px" }}>{service.name}</h3>
+
+                        {myServices.length === 0 ? (
+                            <div className="worker-empty-state">
+                                <div className="empty-icon-box">
+                                    <i className="fa-solid fa-briefcase"></i>
+                                </div>
+                                <h4>No services posted yet</h4>
+                                <p>Tap "Post New Service" to list the skills you offer to clients.</p>
+                            </div>
+                        ) : (
+                            <div className="service-list">
+                                {myServices.map(service => (
+                                    <div className="service-item" key={service.id}>
+                                        <div className="service-item-header">
+                                            <div className="service-item-title">
+                                                <span className="service-item-category">{service.category}</span>
+                                                <h3>{service.name}</h3>
                                             </div>
-                                            <div className="req-pay">₱{service.price}</div>
+                                            <span className="service-item-price">₱{service.price}</span>
                                         </div>
-                                        <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "16px" }}>{service.description}</p>
-                                        <div className="req-actions" style={{ borderTop: "1px solid var(--card-border)", paddingTop: "12px", justifyContent: "flex-end" }}>
-                                            <button className="btn-decline" onClick={() => handleDeleteService(service.id)}>Delete</button>
+                                        <p className="service-item-desc">{service.description}</p>
+                                        <div className="service-item-footer">
+                                            <span></span>
+                                            <div className="service-item-actions">
+                                                <button className="btn-outline-sm" onClick={() => handleDeleteService(service.id)}>
+                                                    <i className="fa-regular fa-trash-can" style={{ fontSize: "11px" }}></i>
+                                                    Delete
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                ))
-                            )}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    <div className="worker-section">
-                        <div className="worker-section-header">
-                            <h2>Incoming Requests ({requests.filter(r => r.status === 'pending').length})</h2>
-                            <button className="view-all-link" onClick={() => window.location.reload()}>Refresh</button>
+                    {/* Incoming Requests */}
+                    <div className="worker-section-card">
+                        <div className="section-header">
+                            <div className="section-header-left">
+                                <span className="section-header-icon"><i className="fa-solid fa-wave-square"></i></span>
+                                <span className="section-header-title">Incoming Requests</span>
+                                <span className="section-badge">{displayRequests.filter(r => r.status === 'pending').length}</span>
+                            </div>
+                            <button className="btn-outline-sm" onClick={() => fetchWorkerData()}>
+                                <i className="fa-solid fa-rotate" style={{ fontSize: "11px" }}></i>
+                                Refresh
+                            </button>
                         </div>
 
-                        <div className="requests-grid">
-                            {requests.filter(r => r.status === 'pending').length === 0 ? (
-                                <p style={{ color: "var(--text-muted)", fontSize: "14px", margin: 0 }}>No new requests at the moment.</p>
-                            ) : (
-                                requests.filter(r => r.status === 'pending').map(req => (
-                                    <div className="worker-request-card" key={req.id}>
-                                        <div className="req-header">
-                                            <div className="req-title-area">
-                                                <span className="req-category">{req.category}</span>
-                                                <h3 style={{ marginTop: "8px" }}>{req.title}</h3>
-                                            </div>
-
-                                        </div>
-
-                                        <div className="req-details">
-                                            <div className="req-detail-row">
-                                                <span><i className="fa-regular fa-calendar"></i></span> <strong>When:</strong> {req.date} ({req.priority})
-                                            </div>
-                                            <div className="req-detail-row">
-                                                <span><i className="fa-solid fa-location-dot"></i></span> <strong>Where:</strong> {req.distance}
+                        {displayRequests.filter(r => r.status === 'pending').length === 0 ? (
+                            <div className="worker-empty-state">
+                                <div className="empty-icon-box">
+                                    <i className="fa-solid fa-phone"></i>
+                                </div>
+                                <h4>No new requests</h4>
+                                <p>When a client books your service, their request will appear here.</p>
+                            </div>
+                        ) : (
+                            <div className="service-list">
+                                {displayRequests.filter(r => r.status === 'pending').map(req => (
+                                    <div className="service-item" key={req.id}>
+                                        <div className="service-item-header">
+                                            <div className="service-item-title">
+                                                <span className="service-item-category">{req.category}</span>
+                                                <h3>{req.title}</h3>
                                             </div>
                                         </div>
-
-                                        <div className="req-footer">
-                                            <div className="req-client">
-                                                <div className="req-client-avatar"><i className={req.homeowner.avatar}></i></div>
+                                        <div className="service-item-meta" style={{ marginBottom: "14px" }}>
+                                            <div className="service-item-meta-row">
+                                                <i className="fa-regular fa-calendar" style={{ fontSize: "11px" }}></i>
+                                                <span><strong>When:</strong> {req.date} ({req.priority})</span>
+                                            </div>
+                                            <div className="service-item-meta-row">
+                                                <i className="fa-solid fa-location-dot" style={{ fontSize: "11px" }}></i>
+                                                <span><strong>Where:</strong> {req.distance}</span>
+                                            </div>
+                                        </div>
+                                        <div className="service-item-footer">
+                                            <div className="req-client-block">
+                                                <div className="req-client-avatar">
+                                                    <i className={req.homeowner.avatar}></i>
+                                                </div>
                                                 <div className="req-client-info">
                                                     <p>{req.homeowner.name}</p>
                                                     <span>{req.homeowner.location}</span>
                                                 </div>
                                             </div>
-                                            <div className="req-actions">
-                                                <button className="btn-decline" onClick={() => handleDecline(req.id)}>Decline</button>
-                                                <button className="btn-accept" onClick={() => handleAccept(req.id)}>Accept Job</button>
+                                            <div className="service-item-actions">
+                                                <button className="btn-outline-sm" onClick={() => handleDecline(req.id)}>Decline</button>
+                                                <button className="btn-primary-sm" onClick={() => handleAccept(req.id)}>Accept Job</button>
                                             </div>
                                         </div>
                                     </div>
-                                ))
-                            )}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    <div className="worker-section" style={{ opacity: 0.8 }}>
-                        <div className="worker-section-header">
-                            <h2>Active Jobs ({requests.filter(r => r.status === 'confirmed').length})</h2>
+                    {/* Active Jobs */}
+                    <div className="worker-section-card">
+                        <div className="section-header">
+                            <div className="section-header-left">
+                                <span className="section-header-icon"><i className="fa-regular fa-clock"></i></span>
+                                <span className="section-header-title">Active Jobs</span>
+                                <span className="section-badge">{displayRequests.filter(r => r.status === 'confirmed').length}</span>
+                            </div>
                         </div>
-                        <div className="requests-grid">
-                            {requests.filter(r => r.status === 'confirmed').length > 0 ? (
-                                requests.filter(r => r.status === 'confirmed').map(job => (
-                                    <div className="worker-request-card" key={job.id} style={{ borderLeft: "4px solid var(--accent)" }}>
-                                        <div className="req-header">
-                                            <div className="req-title-area">
-                                                <span className="req-category">{job.category}</span>
-                                                <h3 style={{ marginTop: "8px" }}>{job.title}</h3>
+
+                        {displayRequests.filter(r => r.status === 'confirmed').length === 0 ? (
+                            <div className="worker-empty-state">
+                                <div className="empty-icon-box">
+                                    <i className="fa-regular fa-clock"></i>
+                                </div>
+                                <h4>No active jobs</h4>
+                                <p>Jobs you're currently working on will be tracked here.</p>
+                            </div>
+                        ) : (
+                            <div className="service-list">
+                                {displayRequests.filter(r => r.status === 'confirmed').map(job => (
+                                    <div className="service-item active-job" key={job.id}>
+                                        <div className="service-item-header">
+                                            <div className="service-item-title">
+                                                <span className="service-item-category">{job.category}</span>
+                                                <h3>{job.title}</h3>
                                             </div>
-                                            <div className="req-status-badge">Active</div>
+                                            <span className="active-badge">Active</span>
                                         </div>
-                                        <div className="req-details" style={{ marginBottom: "16px" }}>
-                                            <div className="req-detail-row">
-                                                <span><i className="fa-solid fa-user"></i></span> <strong>Client:</strong> {job.homeowner.name}
+                                        <div className="service-item-meta" style={{ marginBottom: "14px" }}>
+                                            <div className="service-item-meta-row">
+                                                <i className="fa-solid fa-user" style={{ fontSize: "11px" }}></i>
+                                                <span><strong>Client:</strong> {job.homeowner.name}</span>
                                             </div>
                                         </div>
-                                        <div className="req-actions" style={{ borderTop: "1px solid var(--card-border)", paddingTop: "12px" }}>
-                                            <button 
-                                                className="btn-accept" 
-                                                style={{ width: "100%", background: "linear-gradient(135deg, #2ed573, #26af5a)" }}
+                                        <div className="service-item-actions" style={{ borderTop: "1px solid var(--card-border)", paddingTop: "14px" }}>
+                                            <button
+                                                className="btn-primary-sm"
+                                                style={{ width: "100%", justifyContent: "center", background: "linear-gradient(135deg, #059669, #047857)" }}
                                                 onClick={() => handleCompleteJob(job.id)}
                                             >
+                                                <i className="fa-solid fa-check" style={{ fontSize: "11px" }}></i>
                                                 Mark as Completed
                                             </button>
                                         </div>
                                     </div>
-                                ))
-                            ) : (
-                                <p style={{ color: "var(--text-muted)", fontSize: "14px", margin: 0, gridColumn: "1 / -1" }}>No active jobs found in the system.</p>
-                            )}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                </div>
 
-                {/* Right Side: Reviews & Info */}
-                <div className="worker-sidebar">
-                    <div className="worker-section">
-                        <div className="worker-section-header">
-                            <h2>Recent Reviews</h2>
-                            <button className="view-all-link">See All</button>
+                </div>{/* /left-col */}
+
+                {/* ─── RIGHT COLUMN ─── */}
+                <div className="worker-right-col">
+                    <div className="worker-section-card">
+                        <div className="section-header">
+                            <div className="section-header-left">
+                                <span className="section-header-icon"><i className="fa-regular fa-comment"></i></span>
+                                <span className="section-header-title">Recent Reviews</span>
+                            </div>
+                            <button className="btn-outline-sm">See All</button>
                         </div>
-                        <div className="review-list">
-                            {recentReviews.length === 0 ? (
-                                <p style={{ color: "var(--text-muted)", fontSize: "13px", padding: "10px" }}>No reviews yet. Keep up the good work!</p>
-                            ) : (
-                                recentReviews.map(rev => (
+
+                        {displayReviews.length === 0 ? (
+                            <div className="worker-empty-state">
+                                <div className="empty-icon-box">
+                                    <i className="fa-regular fa-comment"></i>
+                                </div>
+                                <h4>No reviews yet</h4>
+                                <p>Reviews from clients will show after completing your first job.</p>
+                            </div>
+                        ) : (
+                            <div className="review-list">
+                                {displayReviews.map(rev => (
                                     <div className="review-item" key={rev.id}>
                                         <div className="review-header">
                                             <span className="review-author">{rev.author}</span>
                                             <span className="review-rating">
-                                                {[...Array(rev.rating)].map((_, i) => <i key={`star-${i}`} className="fa-solid fa-star"></i>)}
-                                                {[...Array(5 - rev.rating)].map((_, i) => <i key={`empty-${i}`} className="fa-regular fa-star"></i>)}
+                                                {[...Array(rev.rating)].map((_, i) => (
+                                                    <i key={`star-${i}`} className="fa-solid fa-star"></i>
+                                                ))}
+                                                {[...Array(5 - rev.rating)].map((_, i) => (
+                                                    <i key={`empty-${i}`} className="fa-regular fa-star"></i>
+                                                ))}
                                             </span>
                                         </div>
                                         <p className="review-text">"{rev.text}"</p>
-                                        <span style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "6px", display: "block" }}>{rev.date}</span>
+                                        <span className="review-date">{rev.date}</span>
                                     </div>
-                                ))
-                            )}
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Rating Breakdown */}
+                        <div className="rating-breakdown">
+                            <div className="rating-breakdown-label">Rating Breakdown</div>
+                            {[5, 4, 3, 2, 1].map(star => (
+                                <div className="rb-row" key={star}>
+                                    <span className="rb-star-num">{star}</span>
+                                    <span className="rb-star-icon"><i className="fa-solid fa-star"></i></span>
+                                    <div className="rb-bar-bg">
+                                        <div
+                                            className="rb-bar"
+                                            style={{
+                                                width: totalReviews > 0
+                                                    ? `${(ratingBreakdown[star - 1] / totalReviews) * 100}%`
+                                                    : "0%"
+                                            }}
+                                        ></div>
+                                    </div>
+                                    <span className="rb-count">{ratingBreakdown[star - 1]}</span>
+                                </div>
+                            ))}
                         </div>
                     </div>
-                </div>
-            </div>
+                </div>{/* /right-col */}
 
-            {/* Post Service Modal */}
+            </div>{/* /main-grid */}
+
+            {/* ─── Post Service Modal ─── */}
             {isModalOpen && (
-                <div className="modal-overlay" style={{
-                    position: "fixed", top: 0, left: 0, width: "100%", height: "100%", 
-                    backgroundColor: "rgba(0,0,0,0.8)", display: "flex", justifyContent: "center", 
-                    alignItems: "center", zIndex: 1000, padding: "20px"
-                }}>
-                    <div className="reg-card" style={{ maxWidth: "500px", width: "100%" }}>
-                        <h2 className="reg-title">Post a Service</h2>
-                        <p className="reg-subtitle">Offer your skills to homeowners</p>
-                        <form onSubmit={handlePostService} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                            <div className="reg-field lifted">
-                                <label className="reg-label">Service Title</label>
-                                <input className="reg-input" required value={newService.name} onChange={e => setNewService({...newService, name: e.target.value})} placeholder="e.g. Master Plumbing" />
+                <div className="modal-overlay">
+                    <div className="modal-card">
+                        <h2>Post a Service</h2>
+                        <p className="modal-subtitle">Offer your skills to homeowners</p>
+                        <form className="modal-form" onSubmit={handlePostService}>
+                            <div className="modal-field">
+                                <label>Service Title</label>
+                                <input
+                                    required
+                                    value={newService.name}
+                                    onChange={e => setNewService({...newService, name: e.target.value})}
+                                    placeholder="e.g. Master Plumbing"
+                                />
                             </div>
-                            <div className="reg-field lifted">
-                                <label className="reg-label">Category</label>
-                                <select className="reg-input reg-select" value={newService.category} onChange={e => setNewService({...newService, category: e.target.value})}>
+                            <div className="modal-field">
+                                <label>Category</label>
+                                <select
+                                    value={newService.category}
+                                    onChange={e => setNewService({...newService, category: e.target.value})}
+                                >
                                     <option value="Cleaning">Cleaning</option>
                                     <option value="HVAC">HVAC (Aircon)</option>
                                     <option value="Plumbing">Plumbing</option>
@@ -349,22 +497,34 @@ function WorkerDashboardPage({ user }) {
                                     <option value="Babysitting">Babysitting</option>
                                 </select>
                             </div>
-                            <div className="reg-field lifted">
-                                <label className="reg-label">Price (₱)</label>
-                                <input className="reg-input" type="number" required value={newService.price} onChange={e => setNewService({...newService, price: e.target.value})} placeholder="0.00" />
+                            <div className="modal-field">
+                                <label>Price (₱)</label>
+                                <input
+                                    type="number"
+                                    required
+                                    value={newService.price}
+                                    onChange={e => setNewService({...newService, price: e.target.value})}
+                                    placeholder="0.00"
+                                />
                             </div>
-                            <div className="reg-field lifted">
-                                <label className="reg-label">Description</label>
-                                <textarea className="reg-input" style={{ height: "100px", padding: "12px", resize: "none" }} required value={newService.description} onChange={e => setNewService({...newService, description: e.target.value})} placeholder="Describe what you offer..." />
+                            <div className="modal-field">
+                                <label>Description</label>
+                                <textarea
+                                    required
+                                    value={newService.description}
+                                    onChange={e => setNewService({...newService, description: e.target.value})}
+                                    placeholder="Describe what you offer..."
+                                />
                             </div>
-                            <div className="reg-btn-row">
-                                <button type="button" className="reg-btn-ghost" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                                <button type="submit" className="reg-btn">Post Service</button>
+                            <div className="modal-actions">
+                                <button type="button" className="modal-btn-cancel" onClick={() => setIsModalOpen(false)}>Cancel</button>
+                                <button type="submit" className="modal-btn-submit">Post Service</button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
+
         </div>
     );
 }

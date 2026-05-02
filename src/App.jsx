@@ -29,7 +29,9 @@ function AppContent() {
     const [pendingGoogleUser, setPendingGoogleUser] = useState(null); 
     const [settings, setSettings] = useState({
         darkMode: true,
-        language: "English"
+        language: "English",
+        showMockData: false,
+        mockStatusOpen: false
     });
 
     // Mock initial workers
@@ -501,7 +503,7 @@ function AppContent() {
                     <Route path="/dashboard" element={
                         isAuthenticated ?
                             (user.role === "worker" ?
-                                <WorkerDashboardPage user={user} /> :
+                                <WorkerDashboardPage user={user} settings={settings} /> :
                                 <HomeownerDashboardPage user={user} />
                             ) :
                             <Navigate to="/login" />
@@ -527,7 +529,7 @@ function AppContent() {
 
                     <Route path="/history" element={
                         isAuthenticated ?
-                            <HistoryPage user={user} /> :
+                            <HistoryPage user={user} settings={settings} /> :
                             <Navigate to="/login" />
                     } />
 

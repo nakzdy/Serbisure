@@ -1,0 +1,379 @@
+.settings-page {
+    width: 100%;
+    max-width: 700px;
+}
+
+.settings-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 36px 32px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.settings-card h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 4px 0;
+}
+
+.settings-card .settings-subtitle {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    margin: 0 0 28px 0;
+}
+
+/* ─── SUCCESS MESSAGE ────────────────────── */
+.settings-success {
+    padding: 12px 16px;
+    background: rgba(5, 150, 105, 0.12);
+    color: #059669;
+    border-radius: 10px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    text-align: center;
+    border: 1px solid rgba(5, 150, 105, 0.2);
+    font-weight: 500;
+}
+
+/* ─── SECTIONS ───────────────────────────── */
+.settings-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.settings-section {
+    padding: 22px;
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+}
+
+.settings-section h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0 0 18px 0;
+}
+
+/* ─── PROFILE PICTURE ────────────────────── */
+.settings-avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.settings-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #fff;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 2px solid var(--card-border);
+}
+
+.settings-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.settings-avatar-placeholder {
+    font-size: 28px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.settings-change-pic {
+    padding: 9px 18px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity .2s, transform .15s;
+}
+
+.settings-change-pic:hover {
+    opacity: .88;
+    transform: translateY(-1px);
+}
+
+/* ─── FORM FIELDS ────────────────────────── */
+.settings-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.settings-field:last-child {
+    margin-bottom: 0;
+}
+
+.settings-field label {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.settings-field input,
+.settings-field select {
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--input-border);
+    background: var(--card-bg-solid);
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+}
+
+.settings-field input:focus,
+.settings-field select:focus {
+    border-color: var(--input-focus-border);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+/* ─── TOGGLE ROWS ────────────────────────── */
+.settings-toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.settings-toggle-row:last-child {
+    border-bottom: none;
+}
+
+.settings-toggle-label {
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.settings-toggle-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.settings-toggle-value {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Toggle Switch (reuse from worker dashboard) */
+.settings-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+    cursor: pointer;
+    display: inline-block;
+}
+
+.settings-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.settings-switch-track {
+    position: absolute;
+    inset: 0;
+    background: var(--input-border);
+    border-radius: 12px;
+    transition: background .3s;
+}
+
+.settings-switch-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    transition: transform .3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+
+.settings-switch input:checked ~ .settings-switch-track {
+    background: var(--accent);
+}
+
+.settings-switch input:checked ~ .settings-switch-thumb {
+    transform: translateX(20px);
+}
+
+/* ─── SAVE BUTTON ────────────────────────── */
+.settings-save-btn {
+    display: block;
+    width: 100%;
+    padding: 14px 18px;
+    margin-top: 28px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+    font-family: inherit;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 16px var(--accent-glow);
+    transition: transform .15s, box-shadow .15s;
+}
+
+.settings-save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px var(--accent-glow);
+}
+
+.settings-save-btn:active {
+    transform: translateY(0);
+}
+
+/* ─── DEVELOPER / TESTING SECTION ────────── */
+.settings-dev-section {
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.04), rgba(30, 30, 60, 0.5));
+    position: relative;
+    overflow: hidden;
+}
+
+.settings-dev-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+}
+
+.settings-dev-header {
+    margin-bottom: 18px;
+}
+
+.settings-dev-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+    text-transform: uppercase;
+}
+
+.settings-dev-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    margin-bottom: 10px;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.settings-dev-row:last-child {
+    margin-bottom: 0;
+}
+
+.settings-dev-row:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.settings-dev-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+.settings-dev-icon.mock-data-icon {
+    background: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+}
+
+.settings-dev-icon.mock-status-icon {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+}
+
+.settings-dev-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+}
+
+.settings-dev-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.settings-dev-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    opacity: 0.75;
+}
+
+/* ─── RESPONSIVE ─────────────────────────── */
+@media (max-width: 520px) {
+    .settings-card {
+        padding: 24px 20px;
+    }
+
+    .settings-section {
+        padding: 18px;
+    }
+
+    .settings-avatar-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .settings-avatar {
+        width: 64px;
+        height: 64px;
+        font-size: 24px;
+    }
+
+    .settings-dev-row {
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .settings-dev-icon {
+        width: 34px;
+        height: 34px;
+        font-size: 13px;
+    }
+}
