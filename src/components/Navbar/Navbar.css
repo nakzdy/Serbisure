@@ -1,33 +1,31 @@
-/* ===========================
-   Navbar Styles
-   =========================== */
-
 .navbar {
     width: 100%;
-    height: 64px;
+    height: 62px;
     background: var(--nav-bg);
     border-bottom: 1px solid var(--card-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 32px;
+    padding: 0 28px;
     position: sticky;
     top: 0;
     z-index: 1000;
+    transition: background .35s, border-color .35s;
 }
 
-/* Left: Brand */
+/* ─── LEFT: Brand ────────────────────────── */
 .navbar-left {
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-shrink: 0;
 }
 
 .navbar-logo-icon {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     background: linear-gradient(135deg, #6c5ce7, #4834d4);
-    border-radius: 8px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -37,7 +35,7 @@
 }
 
 .navbar-brand {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--text);
     text-decoration: none;
@@ -45,11 +43,11 @@
     background: none;
 }
 
-/* Center: Nav links */
+/* ─── CENTER: Nav Links ──────────────────── */
 .navbar-links {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 2px;
 }
 
 .nav-link-item {
@@ -57,9 +55,9 @@
     color: var(--text-muted);
     font-weight: 500;
     font-size: 14px;
-    transition: color 0.2s ease;
-    padding: 8px 16px;
-    border-radius: 8px;
+    transition: background .2s ease, color .2s ease;
+    padding: 7px 16px;
+    border-radius: 9px;
     background: none;
     border: none;
     cursor: pointer;
@@ -67,63 +65,70 @@
 }
 
 .nav-link-item:hover {
+    background: var(--input-bg);
     color: var(--text);
 }
 
 .nav-link-item.active {
-    color: var(--text);
+    background: var(--status-pending);
+    color: var(--accent);
+    font-weight: 500;
 }
 
-/* Right: Actions */
+/* ─── RIGHT: Actions ─────────────────────── */
 .navbar-actions {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 10px;
+    flex-shrink: 0;
 }
 
 .btn-icon {
-    background: none;
-    border: none;
-    color: #8b8ba3;
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    border: 1px solid var(--card-border);
+    background: var(--card-bg);
     cursor: pointer;
-    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 8px;
-    border-radius: 50%;
-    transition: color 0.2s ease;
-    font-size: 18px;
+    position: relative;
+    transition: background .2s;
+    color: var(--text-muted);
+    font-size: 15px;
+    padding: 0;
 }
 
 .btn-icon:hover {
+    background: var(--input-bg);
     color: var(--text);
 }
 
 .notification-badge {
-    background: #ff4757;
+    background: #DC2626;
     border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    font-size: 10px;
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
     font-weight: 700;
     color: #fff;
     position: absolute;
-    top: -2px;
-    right: -2px;
+    top: -3px;
+    right: -3px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid #12121e;
+    border: 1.5px solid var(--nav-bg);
 }
 
-/* User profile in navbar */
+/* ─── USER AREA ──────────────────────────── */
 .navbar-user {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     cursor: pointer;
-    padding: 4px 8px;
+    padding: 4px 6px;
     border-radius: 8px;
     transition: background 0.2s ease;
 }
@@ -135,14 +140,15 @@
 .navbar-avatar {
     width: 34px;
     height: 34px;
-    border-radius: 50%;
+    border-radius: 9px;
     background: linear-gradient(135deg, #f39c12, #e74c3c);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 700;
     color: #fff;
+    flex-shrink: 0;
 }
 
 .navbar-user-name {
@@ -153,21 +159,41 @@
 
 .navbar-user-chevron {
     font-size: 10px;
-    color: #8b8ba3;
+    color: var(--text-muted);
     margin-left: 2px;
 }
 
-/* Notification dropdown */
+/* ─── LOGOUT BUTTON ──────────────────────── */
+.navbar-logout,
+.navbar-actions > button[title="Log Out"] {
+    font-size: 13px;
+    font-weight: 500;
+    color: #DC2626;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: background .2s;
+    font-family: inherit;
+}
+
+.navbar-logout:hover,
+.navbar-actions > button[title="Log Out"]:hover {
+    background: rgba(220, 38, 38, .08);
+}
+
+/* ─── NOTIFICATION DROPDOWN ──────────────── */
 .notification-dropdown {
     position: absolute;
     right: 0;
-    top: 50px;
+    top: 48px;
     width: 300px;
     background: var(--card-bg-solid);
     border: 1px solid var(--card-border);
-    border-radius: 16px;
-    padding: 15px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
     z-index: 1100;
     backdrop-filter: blur(20px);
 }
@@ -182,15 +208,18 @@
 .notification-dropdown-header h4 {
     margin: 0;
     font-size: 13px;
+    font-weight: 600;
     color: var(--text);
 }
 
 .notification-dropdown .btn-close {
     background: none;
     border: none;
-    color: #fff;
+    color: var(--text-muted);
     cursor: pointer;
     font-size: 18px;
+    padding: 4px;
+    line-height: 1;
 }
 
 .notification-dropdown-list {
@@ -203,44 +232,28 @@
 
 .notification-dropdown-item {
     font-size: 12px;
-    padding: 10px;
+    padding: 10px 12px;
     background: var(--input-bg);
     border-radius: 8px;
     color: var(--text-muted);
+    line-height: 1.4;
 }
 
 .notification-dropdown-empty {
     font-size: 12px;
-    color: var(--muted);
+    color: var(--text-muted);
     text-align: center;
+    padding: 12px;
 }
 
-/* Logout button in navbar */
-.navbar-logout {
-    background: rgba(255, 77, 77, 0.1);
-    border: none;
-    color: #ff4d4d;
-    cursor: pointer;
-    margin-left: 10px;
-    padding: 8px 14px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 500;
-    font-family: inherit;
-    transition: background 0.2s ease;
-}
-
-.navbar-logout:hover {
-    background: rgba(255, 77, 77, 0.2);
-}
-
+/* ─── RESPONSIVE ─────────────────────────── */
 @media (max-width: 768px) {
     .navbar {
         padding: 0 16px;
     }
 
     .navbar-links {
-        gap: 2px;
+        gap: 1px;
     }
 
     .nav-link-item {
@@ -255,21 +268,26 @@
     .navbar-user-chevron {
         display: none;
     }
+
+    .navbar-actions {
+        gap: 6px;
+    }
 }
 
 @media (max-width: 480px) {
     .navbar {
-        padding: 0 10px;
+        padding: 0 12px;
         height: 56px;
     }
 
     .navbar-brand {
-        font-size: 15px;
+        font-size: 14px;
     }
 
     .navbar-logo-icon {
         width: 28px;
         height: 28px;
+        border-radius: 8px;
         font-size: 13px;
     }
 
@@ -279,22 +297,19 @@
 
     .nav-link-item {
         font-size: 11px;
-        padding: 5px 6px;
-    }
-
-    .navbar-actions {
-        gap: 8px;
+        padding: 5px 7px;
     }
 
     .btn-icon {
-        font-size: 16px;
-        padding: 6px;
+        width: 32px;
+        height: 32px;
+        font-size: 13px;
     }
 
     .navbar-avatar {
         width: 28px;
         height: 28px;
-        font-size: 11px;
+        font-size: 10px;
     }
 
     .notification-dropdown {
