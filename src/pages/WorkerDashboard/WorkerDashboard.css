@@ -305,7 +305,7 @@
     padding: 8px 14px;
     border: none;
     background: var(--accent);
-    color: white;
+    color: var(--btn-text);
     transition: opacity .2s, transform .15s;
 }
 
@@ -721,7 +721,7 @@
     padding: 10px 20px;
     border-radius: 8px;
     background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-    color: white;
+    color: var(--btn-text);
     border: none;
     font-size: 13px;
     font-weight: 600;

@@ -180,11 +180,16 @@
     border-top: 1px solid var(--card-border);
 }
 
+.request-card-bottom + .request-searching {
+    border-top: none;
+    padding-top: 10px;
+}
+
 .searching-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #6c5ce7;
+    background: var(--text);
     animation: pulse-search 1.5s ease-in-out infinite;
 }
 
@@ -253,19 +258,19 @@
     padding: 7px 16px;
     border-radius: 8px;
     border: none;
-    background: #6c5ce7;
-    color: #fff;
+    background: var(--accent);
+    color: var(--btn-text);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     font-family: inherit;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+    box-shadow: 0 2px 8px var(--accent-glow);
 }
 
 .btn-message:hover {
-    background: #5a4bd4;
-    box-shadow: 0 4px 12px rgba(108, 92, 231, 0.4);
+    background: var(--accent-dark);
+    box-shadow: 0 4px 12px var(--accent-glow);
 }
 
 /* ===========================

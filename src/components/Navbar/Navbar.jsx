@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import "./Navbar.css";
+import logoImg from "../../assets/logo.png";
 
 function Navbar({ user, notifications, onLogout }) {
     const navigate = useNavigate();
@@ -19,7 +20,7 @@ function Navbar({ user, notifications, onLogout }) {
     return (
         <header className="navbar">
             <div className="navbar-left">
-                <div className="navbar-logo-icon">◆</div>
+                <img src={logoImg} alt="SerbiSure" className="navbar-logo-image" />
                 <Link to="/" className="navbar-brand">
                     SerbiSure
                 </Link>

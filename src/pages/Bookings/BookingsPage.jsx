@@ -8,7 +8,7 @@ function BookingsPage({ bookings, setBookings, workers, addNotification }) {
         switch (status) {
             case "pending": return "#ffcc00";
             case "confirmed": return "#4ade80";
-            case "completed": return "#638cff";
+            case "completed": return "var(--accent)";
             default: return "var(--muted)";
         }
     };
@@ -56,7 +56,7 @@ function BookingsPage({ bookings, setBookings, workers, addNotification }) {
                             {booking.status === "confirmed" && (
                                 <button
                                     className="btn-primary"
-                                    style={{ width: "auto", padding: "8px 15px", fontSize: "13px", background: "linear-gradient(135deg, #638cff, #4a6fe0)" }}
+                                    style={{ width: "auto", padding: "8px 15px", fontSize: "13px" }}
                                     onClick={() => updateBookingStatus(booking.id, "completed")}
                                 >
                                     Complete Service

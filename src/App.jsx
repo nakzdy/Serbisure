@@ -16,6 +16,7 @@ import WorkerDashboardPage from "./pages/WorkerDashboard/WorkerDashboardPage";
 import WorkerOnboardingPage from "./pages/WorkerOnboarding/WorkerOnboardingPage";
 import { setUserProfile, getUserProfile } from "./firebase/db";
 import { authAPI, servicesAPI, bookingsAPI } from "./api/api";
+import logoImg from "./assets/logo.png";
 
 function AppContent() {
     const navigate = useNavigate();
@@ -28,7 +29,7 @@ function AppContent() {
     const [needsRoleSetup, setNeedsRoleSetup] = useState(false); 
     const [pendingGoogleUser, setPendingGoogleUser] = useState(null); 
     const [settings, setSettings] = useState({
-        darkMode: true,
+        darkMode: false,
         language: "English",
         showMockData: false,
         mockStatusOpen: false
@@ -446,22 +447,13 @@ function AppContent() {
                 color: "white",
                 fontFamily: "var(--font-family)"
             }}>
-                <div style={{
-                    width: "64px",
-                    height: "64px",
-                    borderRadius: "16px",
-                    background: "linear-gradient(135deg, var(--accent), var(--accent-dark))",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "32px",
-                    fontWeight: "bold",
+                <img src={logoImg} alt="SerbiSure Logo" style={{
+                    width: "100px",
+                    height: "100px",
+                    objectFit: "contain",
                     marginBottom: "24px",
-                    boxShadow: "0 0 30px var(--accent-glow)",
                     animation: "pulse 2s infinite"
-                }}>
-                    S
-                </div>
+                }} />
                 <div style={{ fontSize: "14px", color: "var(--text-muted)", letterSpacing: "2px", textTransform: "uppercase" }}>
                     Loading SerbiSure...
                 </div>
