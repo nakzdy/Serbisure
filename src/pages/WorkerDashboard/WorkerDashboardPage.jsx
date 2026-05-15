@@ -49,7 +49,12 @@ function WorkerDashboardPage({ user, settings }) {
             // 2. Fetch My Services
             const servicesData = await servicesAPI.getServices();
             const allServices = Array.isArray(servicesData) ? servicesData : (servicesData?.results || []);
-            const filtered = allServices.filter(s => s.provider?.id === user.uid || s.provider === user.uid);
+            // Match by Django user ID (integer) or by email as fallback
+            const filtered = allServices.filter(s =>
+                s.provider?.id === user.uid ||
+                s.provider?.id === Number(user.uid) ||
+                s.provider?.email === user.email
+            );
             setMyServices(filtered);
 
             // 3. Extract real reviews from bookings
@@ -64,7 +69,10 @@ function WorkerDashboardPage({ user, settings }) {
 
             // 4. Update Stats
             const completedCount = safeBookings.filter(b => b.status === 'completed').length;
-            setStats(prev => ({ ...prev, jobsCompleted: completedCount }));
+            const avgRating = realReviews.length > 0
+                ? realReviews.reduce((sum, r) => sum + r.rating, 0) / realReviews.length
+                : 0.0;
+            setStats(prev => ({ ...prev, jobsCompleted: completedCount, rating: avgRating }));
 
         } catch (err) {
             console.error("Worker dashboard fetch failed:", err);
@@ -236,7 +244,7 @@ function WorkerDashboardPage({ user, settings }) {
                 <div className="worker-left-col">
 
                     {/* My Services */}
-                    <div className="worker-section-card">
+                    <div id="worker-services" className="worker-section-card">
                         <div className="section-header">
                             <div className="section-header-left">
                                 <span className="section-header-icon"><i className="fa-solid fa-briefcase"></i></span>
@@ -285,7 +293,7 @@ function WorkerDashboardPage({ user, settings }) {
                     </div>
 
                     {/* Incoming Requests */}
-                    <div className="worker-section-card">
+                    <div id="worker-jobs" className="worker-section-card">
                         <div className="section-header">
                             <div className="section-header-left">
                                 <span className="section-header-icon"><i className="fa-solid fa-wave-square"></i></span>

@@ -75,7 +75,8 @@ function HomeownerDashboardPage({ user }) {
                 const servicesData = await servicesAPI.getServices();
                 const safeServicesData = Array.isArray(servicesData) ? servicesData : (servicesData?.results || []);
                 
-                const mappedWorkers = safeServicesData.slice(0, 5).map(s => ({
+                // Show newest services first: take the last 5 and reverse order
+                const mappedWorkers = safeServicesData.slice(-5).reverse().map(s => ({
                     id: s.id,
                     name: s.provider?.full_name || s.name,
                     specialty: s.category,
@@ -92,6 +93,28 @@ function HomeownerDashboardPage({ user }) {
             }
         };
         fetchDashboardData();
+
+        // Poll for new services every 15s so newly posted services appear without a manual refresh
+        const servicesPoll = setInterval(async () => {
+            try {
+                const servicesData = await servicesAPI.getServices();
+                const safeServicesData = Array.isArray(servicesData) ? servicesData : (servicesData?.results || []);
+                const mappedWorkers = safeServicesData.slice(-5).reverse().map(s => ({
+                    id: s.id,
+                    name: s.provider?.full_name || s.name,
+                    specialty: s.category,
+                    rating: 4.9,
+                    reliability: "98% Reliable",
+                    avatar: "fa-solid fa-user-tie",
+                    verified: true
+                }));
+                setTopWorkers(mappedWorkers);
+            } catch (err) {
+                console.debug('Services poll failed:', err);
+            }
+        }, 15000);
+
+        return () => clearInterval(servicesPoll);
     }, [user.uid]);
 
     const filteredRequests = activeTab === "pending"

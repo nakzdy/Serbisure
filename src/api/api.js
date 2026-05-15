@@ -1,8 +1,14 @@
 import axios from 'axios';
 
 // Detect environment to switch between localhost and production
-const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://[IP ADDRESS NIMO]:8001'
+// Prefer a Vite-provided env var `VITE_API_URL` when available, otherwise
+// default to localhost:8000 for local development and the deployed URL for prod.
+const DEV_FALLBACK = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL
+    ? import.meta.env.VITE_API_URL
+    : 'http://localhost:8000';
+
+const BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? DEV_FALLBACK
     : 'https://serbisure-backend.vercel.app';
 
 // Centralized API instance
@@ -117,6 +123,17 @@ export const bookingsAPI = {
     },
     deleteBooking: async (id) => {
         const response = await api.delete(`/api/v1/bookings/${id}/`);
+        return response.data;
+    }
+};
+
+export const openJobsAPI = {
+    getOpenJobs: async () => {
+        const response = await api.get('/api/v1/open-jobs/');
+        return response.data.results || response.data.data || response.data;
+    },
+    acceptJob: async (bookingId) => {
+        const response = await api.patch(`/api/v1/open-jobs/${bookingId}/accept/`);
         return response.data;
     }
 };
