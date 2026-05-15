@@ -393,7 +393,7 @@ function WorkerDashboardPage({ user, settings }) {
                                         <div className="service-item-actions" style={{ borderTop: "1px solid var(--card-border)", paddingTop: "14px" }}>
                                             <button
                                                 className="btn-primary-sm"
-                                                style={{ width: "100%", justifyContent: "center", background: "linear-gradient(135deg, #059669, #047857)" }}
+                                                style={{ width: "100%", justifyContent: "center", background: "linear-gradient(135deg, #059669, #047857)", color: "white" }}
                                                 onClick={() => handleCompleteJob(job.id)}
                                             >
                                                 <i className="fa-solid fa-check" style={{ fontSize: "11px" }}></i>

@@ -113,9 +113,9 @@
 }
 
 .dashboard-tab.active {
-    background: #6c5ce7;
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+    background: var(--accent);
+    color: var(--btn-text);
+    box-shadow: 0 2px 8px var(--accent-glow);
 }
 
 /* Filter controls */

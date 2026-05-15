@@ -455,6 +455,15 @@ The system is inherently decoupled. Adding a new external data source (e.g., Goo
 - **Extraction Vulnerabilities:** Relying on periodic batch imports creates an inherent delay in data freshness. Network interruptions require robust retry mechanisms to prevent data loss.
 - **NLP Accuracy Risk:** The Taglish sentiment model introduces an accuracy ceiling that cannot be fully resolved without specialized Filipino NLP corpora (FiReCS, Filipino SentiNet), which are not yet widely available for production use.
 
+### Cloud Service Model (IaaS/PaaS/SaaS)
+SerbiSure utilizes a hybrid cloud service model. The React frontends are deployed on Vercel, functioning as a Platform-as-a-Service (PaaS). For identity and real-time database management, we rely on Firebase, which acts as a Backend-as-a-Service (BaaS) / specialized Software-as-a-Service (SaaS). This offloads server management while guaranteeing high availability.
+
+### API / WebSocket Communication
+While traditional REST APIs handle external extraction (e.g., Facebook Graph), the real-time communication between the UI and Firestore relies on the Firebase SDK. This SDK establishes persistent, encrypted WebSocket connections under the hood for low-latency synchronization, ensuring that worker status and chat messages update instantly without manual HTTP polling.
+
+### Containerization & Deployment Strategy
+Containerization (e.g., Docker) was evaluated but ultimately bypassed in favor of a Serverless/PaaS deployment architecture (Vercel + Firebase). This trade-off removes the operational overhead of managing container orchestration (Kubernetes) while preserving horizontal scalability and automatic provisioning during traffic spikes.
+
 ### Checklist
 
 | # | Checklist Item | Fully Met | Partially | Not Met | Points |

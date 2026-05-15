@@ -59,7 +59,8 @@ function HomeownerDashboardPage({ user }) {
                     estimatedCost: `${b.service_details?.price || 0}`,
                     status: b.status,
                     statusLabel: b.status === 'confirmed' ? "Accepted" : (b.status === 'completed' ? "Finished" : "Pending"),
-                    image: `https://placehold.co/200x200/6c5ce7/ffffff?text=${b.service_details?.category?.charAt(0) || 'S'}`,
+                    image: null,
+                    imageLetter: b.service_details?.category?.charAt(0) || 'S',
                     worker: b.service_details?.provider ? {
                         name: b.service_details.provider.full_name,
                         rating: 4.8,
@@ -200,9 +201,9 @@ function HomeownerDashboardPage({ user }) {
                                             display: "block",
                                             width: "100%",
                                             padding: "10px 16px",
-                                            background: minRating === opt.value ? "rgba(108, 92, 231, 0.2)" : "transparent",
+                                            background: minRating === opt.value ? "var(--accent-glow)" : "transparent",
                                             border: "none",
-                                            color: minRating === opt.value ? "#6c5ce7" : "var(--text)",
+                                            color: minRating === opt.value ? "var(--accent)" : "var(--text)",
                                             fontSize: "13px",
                                             fontWeight: minRating === opt.value ? "600" : "400",
                                             cursor: "pointer",
@@ -231,7 +232,18 @@ function HomeownerDashboardPage({ user }) {
                             {/* Top: Image + Info + Status */}
                             <div className="request-card-top">
                                 <div className="request-card-image">
-                                    <img src={request.image} alt={request.title} />
+                                    {request.image ? (
+                                        <img src={request.image} alt={request.title} />
+                                    ) : (
+                                        <div style={{
+                                            width: '100%', height: '100%', display: 'flex', 
+                                            alignItems: 'center', justifyContent: 'center', 
+                                            fontSize: '36px', fontWeight: 'bold', 
+                                            background: 'var(--input-bg)', color: 'var(--accent)'
+                                        }}>
+                                            {request.imageLetter}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="request-card-info">
                                     <h3>{request.title}</h3>
@@ -521,7 +533,7 @@ function HomeownerDashboardPage({ user }) {
                     <div style={{
                         background: "var(--card-bg-solid)", border: "1px solid var(--accent)",
                         borderRadius: "24px", padding: "40px", width: "100%", maxWidth: "400px",
-                        textAlign: "center", boxShadow: "0 20px 60px rgba(108, 92, 231, 0.4)"
+                        textAlign: "center", boxShadow: "0 20px 60px var(--accent-glow)"
                     }}>
                         <h2 style={{ color: "var(--text)", margin: "0 0 10px 0" }}>Rate Service</h2>
                         <p style={{ color: "var(--text-muted)", marginBottom: "24px" }}>How was your experience with {ratingRequest.worker?.name}?</p>
@@ -577,7 +589,7 @@ function HomeownerDashboardPage({ user }) {
                                         alert("Could not save review. Please try again.");
                                     }
                                 }}
-                                style={{ flex: 2, padding: "14px", borderRadius: "12px", border: "none", background: "var(--accent)", color: "#fff", fontWeight: "700", cursor: "pointer" }}
+                                style={{ flex: 2, padding: "14px", borderRadius: "12px", border: "none", background: "var(--accent)", color: "var(--btn-text)", fontWeight: "700", cursor: "pointer" }}
                             >
                                 Submit Review
                             </button>

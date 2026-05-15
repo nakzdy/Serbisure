@@ -17,7 +17,7 @@ function PasswordStrength({ password }) {
         if (score <= 1) return { level: 1, label: "Weak", color: "#fc5c65" };
         if (score === 2) return { level: 2, label: "Fair", color: "#f9ca24" };
         if (score === 3) return { level: 3, label: "Good", color: "#6ab04c" };
-        return { level: 4, label: "Strong", color: "#638cff" };
+        return { level: 4, label: "Strong", color: "var(--accent)" };
     };
     const { level, label, color } = getStrength(password);
     if (!password) return null;
