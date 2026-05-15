@@ -5,7 +5,7 @@ import axios from 'axios';
 // default to localhost:8000 for local development and the deployed URL for prod.
 const DEV_FALLBACK = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL
     ? import.meta.env.VITE_API_URL
-    : 'http://localhost:8000';
+    : 'http://192.168.1.4:8000';
 
 const BASE_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? DEV_FALLBACK
