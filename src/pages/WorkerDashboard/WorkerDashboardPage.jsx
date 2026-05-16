@@ -47,15 +47,19 @@ function WorkerDashboardPage({ user, settings }) {
             setRequests(mappedRequests);
 
             // 2. Fetch My Services
-            const servicesData = await servicesAPI.getServices();
-            const allServices = Array.isArray(servicesData) ? servicesData : (servicesData?.results || []);
-            // Match by Django user ID (integer) or by email as fallback
-            const filtered = allServices.filter(s =>
-                s.provider?.id === user.uid ||
-                s.provider?.id === Number(user.uid) ||
-                s.provider?.email === user.email
-            );
-            setMyServices(filtered);
+            if (user.uid) {
+                const servicesData = await servicesAPI.getWorkerServices(user.uid);
+                const allServices = Array.isArray(servicesData) ? servicesData : (servicesData?.results || []);
+                // Filter is kept as fallback just in case backend query param fails
+                const filtered = allServices.filter(s =>
+                    s.provider?.id === user.uid ||
+                    s.provider?.id === Number(user.uid) ||
+                    s.provider?.email === user.email
+                );
+                setMyServices(filtered);
+            } else {
+                setMyServices([]);
+            }
 
             // 3. Extract real reviews from bookings
             const realReviews = safeBookings.filter(b => b.rating).map(b => ({

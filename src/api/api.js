@@ -86,12 +86,10 @@ export const servicesAPI = {
         return response.data.results || response.data.data || response.data;
     },
     // Fetch only services created by the current worker
-    getWorkerServices: async () => {
-        const response = await api.get('/api/v1/services/');
+    getWorkerServices: async (providerId) => {
+        const url = providerId ? `/api/v1/services/?provider=${providerId}` : '/api/v1/services/';
+        const response = await api.get(url);
         const data = response.data.results || response.data.data || response.data;
-        // The backend returns all, but we filter here for safety, or better, 
-        // the backend should handle a /my-services/ endpoint or query param.
-        // For now, filtering by provider ID if we have it, or just returning all if backend filters.
         return data;
     },
     createService: async (data) => {
