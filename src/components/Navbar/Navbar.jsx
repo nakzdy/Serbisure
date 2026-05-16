@@ -85,11 +85,11 @@ function Navbar({ user, notifications, onLogout }) {
                 </div>
                 <button
                     onClick={onLogout}
-                    className="btn-icon"
+                    className="navbar-logout-btn"
                     title="Log Out"
-                    style={{ marginLeft: "12px", color: "#fc5c65", fontSize: "14px", fontWeight: "600" }}
                 >
-                    Logout
+                    <i className="fa-solid fa-arrow-right-from-bracket logout-icon"></i>
+                    <span className="logout-text">Logout</span>
                 </button>
             </div>
         </header>
