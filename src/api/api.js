@@ -81,16 +81,55 @@ export const authAPI = {
 
 export const servicesAPI = {
     getServices: async () => {
-        const response = await api.get('/api/v1/services/');
-        // Return results for pagination support, fallback to data wrapper
-        return response.data.results || response.data.data || response.data;
+        let allResults = [];
+        let url = '/api/v1/services/';
+        
+        while (url) {
+            // Use full URL if it's a 'next' link from DRF, otherwise use relative
+            const response = await api.get(url);
+            const data = response.data;
+            
+            if (data.results) {
+                allResults = [...allResults, ...data.results];
+                // DRF returns full absolute URL for 'next'
+                url = data.next || null;
+            } else {
+                // Fallback if not paginated
+                allResults = data.data || data;
+                break;
+            }
+        }
+        
+        // Ensure newest services (highest ID) are always at the top
+        if (Array.isArray(allResults)) {
+            allResults.sort((a, b) => b.id - a.id);
+        }
+        
+        return allResults;
     },
     // Fetch only services created by the current worker
     getWorkerServices: async (providerId) => {
-        const url = providerId ? `/api/v1/services/?provider=${providerId}` : '/api/v1/services/';
-        const response = await api.get(url);
-        const data = response.data.results || response.data.data || response.data;
-        return data;
+        let allResults = [];
+        let url = providerId ? `/api/v1/services/?provider=${providerId}` : '/api/v1/services/';
+        
+        while (url) {
+            const response = await api.get(url);
+            const data = response.data;
+            
+            if (data.results) {
+                allResults = [...allResults, ...data.results];
+                url = data.next || null;
+            } else {
+                allResults = data.data || data;
+                break;
+            }
+        }
+        
+        if (Array.isArray(allResults)) {
+            allResults.sort((a, b) => b.id - a.id);
+        }
+        
+        return allResults;
     },
     createService: async (data) => {
         const response = await api.post('/api/v1/services/', data);
